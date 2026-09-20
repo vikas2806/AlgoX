@@ -5,6 +5,7 @@ import { prisma } from './prisma';
 import { generateCaseId } from './lib/generateCaseId';
 import { encryptComplaint } from './lib/crypto';
 import { mapInternalToPublic } from './lib/statusMapping';
+import { sendPaddedJson, TARGET_PADDED_SIZE_BYTES } from './lib/padding';
 
 dotenv.config();
 
@@ -41,12 +42,12 @@ app.get('/api/cases/generate-id', async (_req, res) => {
   }
 });
 
-// Verify if a Case ID exists in the database
+// Verify if a Case ID exists in the database (Padded response)
 app.post('/api/cases/verify-id', async (req, res) => {
   try {
     const { caseId } = req.body;
     if (!caseId || typeof caseId !== 'string') {
-      res.status(400).json({ success: false, error: 'Case ID is required' });
+      sendPaddedJson(res, { success: false, error: 'Case ID is required' });
       return;
     }
 
@@ -56,11 +57,11 @@ app.post('/api/cases/verify-id', async (req, res) => {
     });
 
     if (!caseRecord) {
-      res.status(404).json({ success: false, exists: false, error: 'Case ID not found' });
+      sendPaddedJson(res, { success: false, exists: false, error: 'Case ID not found' });
       return;
     }
 
-    res.json({
+    sendPaddedJson(res, {
       success: true,
       exists: true,
       caseId: caseRecord.caseId,
@@ -69,16 +70,16 @@ app.post('/api/cases/verify-id', async (req, res) => {
     });
   } catch (error) {
     console.error('Error verifying Case ID:', error);
-    res.status(500).json({ success: false, error: 'Failed to verify Case ID' });
+    sendPaddedJson(res, { success: false, error: 'Failed to verify Case ID' });
   }
 });
 
-// Task 5: Status portal (user side) — Fetch only the 4-state public status
+// Task 5 & 6: Status portal with Metadata Camouflage (Exact 1024-Byte Constant Padding)
 app.get('/api/cases/:caseId/status', async (req, res) => {
   try {
     const { caseId } = req.params;
     if (!caseId) {
-      res.status(400).json({ success: false, error: 'Case ID is required' });
+      sendPaddedJson(res, { success: false, error: 'Case ID is required' });
       return;
     }
 
@@ -93,12 +94,15 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
     });
 
     if (!caseRecord) {
-      res.status(404).json({ success: false, error: 'Case ID not found' });
+      // Even error responses are padded to 1024 bytes to prevent existence enumeration
+      sendPaddedJson(res, { success: false, error: 'Case not found' });
       return;
     }
 
-    // Return ONLY the 4-state public status — strictly no internal HR details
-    res.json({
+    console.log(`[AlgoX Camouflage] Status dispatched for ${caseRecord.caseId} [${caseRecord.publicStatus}] -> Padded to ${TARGET_PADDED_SIZE_BYTES} bytes`);
+
+    // Dispatches strictly padded constant-size wire response
+    sendPaddedJson(res, {
       success: true,
       caseId: caseRecord.caseId,
       publicStatus: caseRecord.publicStatus,
@@ -106,7 +110,7 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching case status:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch case status' });
+    sendPaddedJson(res, { success: false, error: 'Failed to fetch case status' });
   }
 });
 

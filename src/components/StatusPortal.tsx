@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, CheckCircle2, Clock, BellRing, Check, ShieldCheck, EyeOff, FilePlus } from 'lucide-react';
 import { FOUR_PUBLIC_STATES, PublicStatus } from '../lib/statusMapping';
+import { NetworkInspector } from './NetworkInspector';
 
 interface StatusPortalProps {
   caseId: string;
@@ -39,20 +40,30 @@ export const StatusPortal = ({ caseId, onFileAdditional }: StatusPortalProps) =>
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wireBytes, setWireBytes] = useState<number>(1024);
+  const [rawResponseText, setRawResponseText] = useState<string | undefined>(undefined);
 
   const fetchStatus = useCallback(async () => {
     setIsRefreshing(true);
     setError(null);
     try {
       const res = await fetch(`/api/cases/${caseId}/status`);
+      const rawText = await res.text();
+      setRawResponseText(rawText);
+
+      // Check header or raw text byte length
+      const contentLengthHeader = res.headers.get('Content-Length');
+      const calculatedBytes = contentLengthHeader ? parseInt(contentLengthHeader, 10) : new Blob([rawText]).size;
+      setWireBytes(calculatedBytes || 1024);
+
       if (res.ok) {
-        const data = await res.json();
+        const data = JSON.parse(rawText);
         if (data.publicStatus) {
           setCurrentStatus(data.publicStatus as PublicStatus);
         }
         setLastChecked(new Date().toLocaleTimeString());
       } else {
-        const err = await res.json().catch(() => ({}));
+        const err = JSON.parse(rawText);
         setError(err.error || 'Failed to fetch status update.');
       }
     } catch {
@@ -97,7 +108,7 @@ export const StatusPortal = ({ caseId, onFileAdditional }: StatusPortalProps) =>
             className="btn btn-secondary text-xs px-3.5 py-2 flex-1 md:flex-initial flex items-center justify-center gap-1.5"
           >
             <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-blue-400' : ''} />
-            {isRefreshing ? 'Checking...' : 'Check Status'}
+            {isRefreshing ? 'Checking Wire...' : 'Check Status'}
           </button>
           <button
             id="btn-file-additional"
@@ -139,7 +150,7 @@ export const StatusPortal = ({ caseId, onFileAdditional }: StatusPortalProps) =>
 
           {lastChecked && (
             <div className="text-right text-xs opacity-75 font-mono">
-              Last checked: {lastChecked}
+              Last verified: {lastChecked}
             </div>
           )}
         </div>
@@ -194,7 +205,7 @@ export const StatusPortal = ({ caseId, onFileAdditional }: StatusPortalProps) =>
           </div>
         </div>
 
-        {/* Pillar 4 & Privacy Shield Notice */}
+        {/* Pillar 4 Notice */}
         <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 flex items-start gap-3 text-xs text-gray-400 leading-relaxed">
           <EyeOff size={16} className="text-blue-400 shrink-0 mt-0.5" />
           <div>
@@ -204,6 +215,13 @@ export const StatusPortal = ({ caseId, onFileAdditional }: StatusPortalProps) =>
           </div>
         </div>
       </div>
+
+      {/* Pillar 3: Metadata Camouflage Network Inspector & Proof */}
+      <NetworkInspector
+        lastResponseBytes={wireBytes}
+        lastResponseText={rawResponseText}
+        publicStatus={currentStatus}
+      />
     </div>
   );
 };
