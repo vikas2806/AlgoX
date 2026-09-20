@@ -5,7 +5,8 @@ import { prisma } from './prisma';
 import { generateCaseId } from './lib/generateCaseId';
 import { encryptComplaint } from './lib/crypto';
 import { mapInternalToPublic } from './lib/statusMapping';
-import { sendPaddedJson, TARGET_PADDED_SIZE_BYTES } from './lib/padding';
+import { sendPaddedJson } from './lib/padding';
+import { startBatchWorker, queueStatusUpdate } from './lib/batchWorker';
 
 dotenv.config();
 
@@ -14,6 +15,9 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Start the background batch & jitter release worker
+startBatchWorker(3000);
 
 // Health check route
 app.get('/api/health', (_req, res) => {
@@ -94,19 +98,25 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
     });
 
     if (!caseRecord) {
-      // Even error responses are padded to 1024 bytes to prevent existence enumeration
       sendPaddedJson(res, { success: false, error: 'Case not found' });
       return;
     }
 
-    console.log(`[AlgoX Camouflage] Status dispatched for ${caseRecord.caseId} [${caseRecord.publicStatus}] -> Padded to ${TARGET_PADDED_SIZE_BYTES} bytes`);
+    // Check if there is a pending queued update for transparency in demo
+    const pendingUpdate = await prisma.statusUpdateQueue.findFirst({
+      where: {
+        caseId: trimmedId,
+        released: false,
+      },
+      orderBy: { scheduledReleaseAt: 'desc' },
+    });
 
-    // Dispatches strictly padded constant-size wire response
     sendPaddedJson(res, {
       success: true,
       caseId: caseRecord.caseId,
       publicStatus: caseRecord.publicStatus,
       updatedAt: caseRecord.updatedAt,
+      hasPendingBatchedUpdate: !!pendingUpdate,
     });
   } catch (error) {
     console.error('Error fetching case status:', error);
@@ -202,10 +212,10 @@ app.get('/api/admin/cases', async (_req, res) => {
   }
 });
 
-// Task 4: HR Admin — Update internal status & map to 4 public states
+// Task 7: HR Admin — Update status via Batched / Jittered Queue
 app.post('/api/admin/cases/update-status', async (req, res) => {
   try {
-    const { caseId, internalStatus, customPublicStatus } = req.body;
+    const { caseId, internalStatus, customPublicStatus, immediate } = req.body;
 
     if (!caseId || !internalStatus) {
       res.status(400).json({ success: false, error: 'Case ID and internal status are required.' });
@@ -213,28 +223,70 @@ app.post('/api/admin/cases/update-status', async (req, res) => {
     }
 
     const trimmedId = caseId.trim().toUpperCase();
-    const publicStatus = customPublicStatus || mapInternalToPublic(internalStatus);
+    const targetPublicStatus = customPublicStatus || mapInternalToPublic(internalStatus);
 
+    // Update internal status immediately in HR records
     const updatedCase = await prisma.case.update({
       where: { caseId: trimmedId },
       data: {
         internalStatus,
-        publicStatus,
       },
     });
 
-    console.log(`[AlgoX Server Admin] Status updated for ${updatedCase.caseId} -> Internal: ${updatedCase.internalStatus}, Public: ${updatedCase.publicStatus}`);
+    // Enqueue public release with random jitter to prevent timing attacks
+    const queueResult = await queueStatusUpdate(trimmedId, targetPublicStatus, !!immediate);
 
     res.json({
       success: true,
       caseId: updatedCase.caseId,
       internalStatus: updatedCase.internalStatus,
-      publicStatus: updatedCase.publicStatus,
+      targetPublicStatus,
+      currentPublicStatus: updatedCase.publicStatus,
+      batchedRelease: queueResult,
       updatedAt: updatedCase.updatedAt,
     });
   } catch (error) {
     console.error('Error updating case status:', error);
     res.status(500).json({ success: false, error: 'Failed to update case status' });
+  }
+});
+
+// Task 7: HR Admin — List pending and recent batch queue items
+app.get('/api/admin/queue', async (_req, res) => {
+  try {
+    const queue = await prisma.statusUpdateQueue.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    res.json({ success: true, queue });
+  } catch (error) {
+    console.error('Error fetching queue:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch queue' });
+  }
+});
+
+// Task 7: HR Admin — Force flush / release all pending queued updates (Demo testing tool)
+app.post('/api/admin/queue/flush', async (_req, res) => {
+  try {
+    const pending = await prisma.statusUpdateQueue.findMany({
+      where: { released: false },
+    });
+
+    for (const item of pending) {
+      await prisma.case.update({
+        where: { caseId: item.caseId },
+        data: { publicStatus: item.targetStatus },
+      });
+      await prisma.statusUpdateQueue.update({
+        where: { id: item.id },
+        data: { released: true },
+      });
+    }
+
+    res.json({ success: true, flushedCount: pending.length });
+  } catch (error) {
+    console.error('Error flushing queue:', error);
+    res.status(500).json({ success: false, error: 'Failed to flush queue' });
   }
 });
 

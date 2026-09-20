@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight } from 'lucide-react';
+import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check } from 'lucide-react';
 import { INTERNAL_STATUS_OPTIONS, mapInternalToPublic, PublicStatus } from '../lib/statusMapping';
 
 interface AdminCase {
@@ -12,45 +12,72 @@ interface AdminCase {
   ciphertextSize: number;
 }
 
+interface QueueItem {
+  id: string;
+  caseId: string;
+  targetStatus: string;
+  scheduledReleaseAt: string;
+  released: boolean;
+  createdAt: string;
+}
+
 export const AdminPortal = () => {
   const [cases, setCases] = useState<AdminCase[]>([]);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [newInternalStatus, setNewInternalStatus] = useState<string>('ASSIGNED_INVESTIGATOR');
+  const [useBatchQueue, setUseBatchQueue] = useState<boolean>(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
+  const [isFlushing, setIsFlushing] = useState(false);
+  const [updateFeedback, setUpdateFeedback] = useState<{
+    msg: string;
+    isQueued: boolean;
+    delaySec?: number;
+    jitterSec?: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCases = useCallback(async () => {
+  const fetchCasesAndQueue = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/cases');
-      if (res.ok) {
-        const data = await res.json();
+      const [casesRes, queueRes] = await Promise.all([
+        fetch('/api/admin/cases'),
+        fetch('/api/admin/queue'),
+      ]);
+
+      if (casesRes.ok) {
+        const data = await casesRes.json();
         setCases(data.cases || []);
         if (data.cases && data.cases.length > 0 && !selectedCaseId) {
           setSelectedCaseId(data.cases[0].caseId);
           setNewInternalStatus(data.cases[0].internalStatus);
         }
-      } else {
-        setError('Failed to load cases from server.');
+      }
+
+      if (queueRes.ok) {
+        const qData = await queueRes.json();
+        setQueue(qData.queue || []);
       }
     } catch {
-      setError('Network error loading cases.');
+      setError('Network error loading cases & queue.');
     } finally {
       setIsLoading(false);
     }
   }, [selectedCaseId]);
 
   useEffect(() => {
-    fetchCases();
-  }, [fetchCases]);
+    fetchCasesAndQueue();
+    // Poll queue status every 4 seconds
+    const interval = setInterval(fetchCasesAndQueue, 4000);
+    return () => clearInterval(interval);
+  }, [fetchCasesAndQueue]);
 
   const handleCaseSelect = (c: AdminCase) => {
     setSelectedCaseId(c.caseId);
     setNewInternalStatus(c.internalStatus);
-    setUpdateSuccess(null);
+    setUpdateFeedback(null);
   };
 
   const handleUpdateStatus = async (e: React.FormEvent) => {
@@ -59,7 +86,7 @@ export const AdminPortal = () => {
 
     setIsUpdating(true);
     setError(null);
-    setUpdateSuccess(null);
+    setUpdateFeedback(null);
 
     try {
       const res = await fetch('/api/admin/cases/update-status', {
@@ -68,14 +95,27 @@ export const AdminPortal = () => {
         body: JSON.stringify({
           caseId: selectedCaseId,
           internalStatus: newInternalStatus,
+          immediate: !useBatchQueue,
         }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setUpdateSuccess(`Case ${data.caseId} updated -> Public Status: ${data.publicStatus}`);
-        fetchCases();
+        if (data.batchedRelease && !data.batchedRelease.releasedNow) {
+          setUpdateFeedback({
+            msg: `Case ${data.caseId} updated internally. Public release queued with metadata jitter.`,
+            isQueued: true,
+            delaySec: data.batchedRelease.delaySeconds,
+            jitterSec: data.batchedRelease.jitterSeconds,
+          });
+        } else {
+          setUpdateFeedback({
+            msg: `Case ${data.caseId} updated immediately -> Public Status: ${data.targetPublicStatus}`,
+            isQueued: false,
+          });
+        }
+        fetchCasesAndQueue();
       } else {
         setError(data.error || 'Failed to update case status.');
       }
@@ -86,10 +126,24 @@ export const AdminPortal = () => {
     }
   };
 
+  const handleFlushQueue = async () => {
+    setIsFlushing(true);
+    try {
+      const res = await fetch('/api/admin/queue/flush', { method: 'POST' });
+      if (res.ok) {
+        await fetchCasesAndQueue();
+      }
+    } catch {
+      setError('Failed to flush queue.');
+    } finally {
+      setIsFlushing(false);
+    }
+  };
+
   const selectedCase = cases.find((c) => c.caseId === selectedCaseId);
   const previewPublicStatus = mapInternalToPublic(newInternalStatus);
 
-  const getPublicStatusBadgeColor = (status: PublicStatus) => {
+  const getPublicStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'Received':
         return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
@@ -116,23 +170,23 @@ export const AdminPortal = () => {
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold text-gray-100">HR Admin Internal Portal</h2>
               <span className="pillar-tag bg-purple-500/10 text-purple-300 border-purple-500/20">
-                Pillar 4: Four-State Mapping
+                Pillar 3 &amp; 4: Batched Release &amp; 4-State Shield
               </span>
             </div>
             <p className="text-sm text-gray-400">
-              Manage confidential workplace investigations. Internal workflow is strictly abstracted to 4 public states.
+              Manage confidential investigations. Updates are queued and released with random jitter to defeat network timing correlation attacks.
             </p>
           </div>
         </div>
 
         <button
           id="btn-admin-refresh"
-          onClick={fetchCases}
+          onClick={fetchCasesAndQueue}
           disabled={isLoading}
           className="btn btn-secondary text-sm flex items-center gap-2 self-stretch md:self-auto"
         >
           <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh Cases
+          Refresh Registry
         </button>
       </div>
 
@@ -207,7 +261,7 @@ export const AdminPortal = () => {
               Update Investigation Status
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              Change internal HR state &amp; map to public victim state
+              Change internal HR state &amp; schedule jittered release
             </p>
           </div>
 
@@ -255,15 +309,44 @@ export const AdminPortal = () => {
                     {previewPublicStatus}
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-500 leading-normal">
-                  The user portal will only ever display this 4-state label, preventing metadata leakage about internal investigative complexity.
+              </div>
+
+              {/* Task 7: Batch / Jitter Toggle Option */}
+              <div className="bg-cyan-950/20 border border-cyan-500/30 rounded-xl p-3 flex flex-col gap-2">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-cyan-300">
+                  <input
+                    type="checkbox"
+                    checked={useBatchQueue}
+                    onChange={(e) => setUseBatchQueue(e.target.checked)}
+                    className="w-4 h-4 rounded text-cyan-500 bg-slate-900 border-white/20 focus:ring-cyan-500"
+                  />
+                  <span className="flex items-center gap-1.5">
+                    <Shuffle size={14} className="text-cyan-400" />
+                    Apply Batched Release with Random Jitter (Pillar 3)
+                  </span>
+                </label>
+                <p className="text-[11px] text-gray-400 leading-normal pl-6">
+                  {useBatchQueue
+                    ? 'Delays public status release by ~15-25 seconds with random jitter. Defeats observer timing correlation.'
+                    : 'Bypasses jitter queue for instant testing.'}
                 </p>
               </div>
 
-              {updateSuccess && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center gap-2 text-xs text-emerald-300">
-                  <CheckCircle size={16} className="text-emerald-400 shrink-0" />
-                  <span>{updateSuccess}</span>
+              {updateFeedback && (
+                <div className={`border rounded-xl p-3 flex items-start gap-2 text-xs ${
+                  updateFeedback.isQueued
+                    ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
+                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                }`}>
+                  <CheckCircle size={16} className="shrink-0 mt-0.5" />
+                  <div>
+                    <div>{updateFeedback.msg}</div>
+                    {updateFeedback.delaySec && (
+                      <div className="text-[11px] text-gray-400 mt-1 font-mono">
+                        Jitter Window: {updateFeedback.delaySec}s (Base 15s + Jitter {updateFeedback.jitterSec}s)
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -273,7 +356,7 @@ export const AdminPortal = () => {
                 disabled={isUpdating}
                 className="btn btn-primary w-full mt-1"
               >
-                {isUpdating ? 'Applying Status Update...' : 'Commit Status Update'}
+                {isUpdating ? 'Scheduling Update...' : 'Commit Status Update'}
               </button>
             </form>
           ) : (
@@ -282,6 +365,83 @@ export const AdminPortal = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Task 7: Batched Release Queue Telemetry & Live Monitor */}
+      <div className="card flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <ListOrdered size={16} />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-200">
+                Metadata Camouflage Batch Release Queue
+              </h3>
+              <p className="text-xs text-gray-400">
+                Background worker polling every 3s to dispatch jittered status updates
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="btn-flush-queue"
+            onClick={handleFlushQueue}
+            disabled={isFlushing || queue.filter((q) => !q.released).length === 0}
+            className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 self-start sm:self-auto"
+          >
+            <Zap size={13} className="text-amber-400" />
+            {isFlushing ? 'Flushing...' : 'Force Flush Pending Queue'}
+          </button>
+        </div>
+
+        {queue.length === 0 ? (
+          <div className="py-6 text-center text-gray-500 text-xs font-mono">
+            Queue is empty. Status updates will appear here when scheduled with jitter.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto pr-1">
+            {queue.map((item) => {
+              const isPast = new Date(item.scheduledReleaseAt) <= new Date();
+              const isPending = !item.released && !isPast;
+              return (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded-xl border flex flex-col gap-1.5 text-xs font-mono ${
+                    item.released
+                      ? 'bg-slate-900/40 border-white/5 opacity-70'
+                      : 'bg-cyan-950/30 border-cyan-500/40 shadow-sm shadow-cyan-950/40 ring-1 ring-cyan-500/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <code className="font-bold text-blue-300">{item.caseId}</code>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        item.released
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          : isPending
+                          ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 animate-pulse'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                      }`}
+                    >
+                      {item.released ? 'RELEASED' : isPending ? 'QUEUED (JITTER)' : 'DISPATCHING'}
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] text-gray-300 flex items-center gap-1">
+                    <span>Target:</span>
+                    <strong className="text-white">{item.targetStatus}</strong>
+                  </div>
+
+                  <div className="text-[10px] text-gray-500 flex items-center justify-between pt-1 border-t border-white/5">
+                    <span>Scheduled: {new Date(item.scheduledReleaseAt).toLocaleTimeString()}</span>
+                    {item.released && <Check size={12} className="text-emerald-400" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
