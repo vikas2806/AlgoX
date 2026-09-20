@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { prisma } from './prisma';
 import { generateCaseId } from './lib/generateCaseId';
 import { encryptComplaint } from './lib/crypto';
+import { mapInternalToPublic } from './lib/statusMapping';
 
 dotenv.config();
 
@@ -73,7 +74,6 @@ app.post('/api/cases/verify-id', async (req, res) => {
 });
 
 // Pillar 2: Blind Server — Submit Complaint with AES-256 Encryption
-// NOTE: Server NEVER stores or logs the plaintext complaint content.
 app.post('/api/complaints/submit', async (req, res) => {
   try {
     const { caseId, complaintText, category } = req.body;
@@ -86,17 +86,14 @@ app.post('/api/complaints/submit', async (req, res) => {
     const trimmedId = caseId.trim().toUpperCase();
     const cleanCategory = typeof category === 'string' ? category.trim() : 'General Harassment';
 
-    // Package payload with category before encryption
     const payloadToEncrypt = JSON.stringify({
       category: cleanCategory,
       text: complaintText.trim(),
       submittedAt: new Date().toISOString(),
     });
 
-    // AES-256-GCM encryption
     const { encryptedContent, iv, authTag } = encryptComplaint(payloadToEncrypt);
 
-    // Persist only ciphertext into SQLite
     const caseRecord = await prisma.case.upsert({
       where: { caseId: trimmedId },
       update: {
@@ -116,7 +113,6 @@ app.post('/api/complaints/submit', async (req, res) => {
       },
     });
 
-    // Log metadata only — ZERO PLAINTEXT LOGGING
     console.log(`[AlgoX Server] Complaint secured for ${caseRecord.caseId} | Ciphertext: ${encryptedContent.length / 2} bytes | Status: ${caseRecord.publicStatus}`);
 
     res.json({
@@ -129,6 +125,75 @@ app.post('/api/complaints/submit', async (req, res) => {
   } catch (error) {
     console.error('Error saving encrypted complaint:', error);
     res.status(500).json({ success: false, error: 'Failed to submit encrypted complaint' });
+  }
+});
+
+// Task 4: HR Admin — List all cases (without revealing plaintext)
+app.get('/api/admin/cases', async (_req, res) => {
+  try {
+    const cases = await prisma.case.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        caseId: true,
+        internalStatus: true,
+        publicStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        encryptedContent: true,
+      },
+    });
+
+    const sanitizedCases = cases.map((c) => ({
+      id: c.id,
+      caseId: c.caseId,
+      internalStatus: c.internalStatus,
+      publicStatus: c.publicStatus,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      ciphertextSize: c.encryptedContent.length / 2,
+    }));
+
+    res.json({ success: true, cases: sanitizedCases });
+  } catch (error) {
+    console.error('Error fetching admin cases:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch cases' });
+  }
+});
+
+// Task 4: HR Admin — Update internal status & map to 4 public states
+app.post('/api/admin/cases/update-status', async (req, res) => {
+  try {
+    const { caseId, internalStatus, customPublicStatus } = req.body;
+
+    if (!caseId || !internalStatus) {
+      res.status(400).json({ success: false, error: 'Case ID and internal status are required.' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+    const publicStatus = customPublicStatus || mapInternalToPublic(internalStatus);
+
+    const updatedCase = await prisma.case.update({
+      where: { caseId: trimmedId },
+      data: {
+        internalStatus,
+        publicStatus,
+      },
+    });
+
+    console.log(`[AlgoX Server Admin] Status updated for ${updatedCase.caseId} -> Internal: ${updatedCase.internalStatus}, Public: ${updatedCase.publicStatus}`);
+
+    res.json({
+      success: true,
+      caseId: updatedCase.caseId,
+      internalStatus: updatedCase.internalStatus,
+      publicStatus: updatedCase.publicStatus,
+      updatedAt: updatedCase.updatedAt,
+    });
+  } catch (error) {
+    console.error('Error updating case status:', error);
+    res.status(500).json({ success: false, error: 'Failed to update case status' });
   }
 });
 
