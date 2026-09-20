@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { prisma } from './prisma';
 import { generateCaseId } from './lib/generateCaseId';
+import { encryptComplaint } from './lib/crypto';
 
 dotenv.config();
 
@@ -23,7 +24,6 @@ app.get('/api/cases/generate-id', async (_req, res) => {
     let uniqueId = generateCaseId();
     let attempts = 0;
     
-    // Ensure uniqueness against existing database records
     while (attempts < 5) {
       const existing = await prisma.case.findUnique({
         where: { caseId: uniqueId },
@@ -63,11 +63,72 @@ app.post('/api/cases/verify-id', async (req, res) => {
       success: true,
       exists: true,
       caseId: caseRecord.caseId,
+      publicStatus: caseRecord.publicStatus,
       createdAt: caseRecord.createdAt,
     });
   } catch (error) {
     console.error('Error verifying Case ID:', error);
     res.status(500).json({ success: false, error: 'Failed to verify Case ID' });
+  }
+});
+
+// Pillar 2: Blind Server — Submit Complaint with AES-256 Encryption
+// NOTE: Server NEVER stores or logs the plaintext complaint content.
+app.post('/api/complaints/submit', async (req, res) => {
+  try {
+    const { caseId, complaintText, category } = req.body;
+
+    if (!caseId || !complaintText) {
+      res.status(400).json({ success: false, error: 'Case ID and complaint text are required.' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+    const cleanCategory = typeof category === 'string' ? category.trim() : 'General Harassment';
+
+    // Package payload with category before encryption
+    const payloadToEncrypt = JSON.stringify({
+      category: cleanCategory,
+      text: complaintText.trim(),
+      submittedAt: new Date().toISOString(),
+    });
+
+    // AES-256-GCM encryption
+    const { encryptedContent, iv, authTag } = encryptComplaint(payloadToEncrypt);
+
+    // Persist only ciphertext into SQLite
+    const caseRecord = await prisma.case.upsert({
+      where: { caseId: trimmedId },
+      update: {
+        encryptedContent,
+        iv,
+        authTag,
+        internalStatus: 'RECEIVED',
+        publicStatus: 'Received',
+      },
+      create: {
+        caseId: trimmedId,
+        encryptedContent,
+        iv,
+        authTag,
+        internalStatus: 'RECEIVED',
+        publicStatus: 'Received',
+      },
+    });
+
+    // Log metadata only — ZERO PLAINTEXT LOGGING
+    console.log(`[AlgoX Server] Complaint secured for ${caseRecord.caseId} | Ciphertext: ${encryptedContent.length / 2} bytes | Status: ${caseRecord.publicStatus}`);
+
+    res.json({
+      success: true,
+      caseId: caseRecord.caseId,
+      publicStatus: caseRecord.publicStatus,
+      submittedAt: caseRecord.createdAt,
+      ciphertextSize: encryptedContent.length / 2,
+    });
+  } catch (error) {
+    console.error('Error saving encrypted complaint:', error);
+    res.status(500).json({ success: false, error: 'Failed to submit encrypted complaint' });
   }
 });
 

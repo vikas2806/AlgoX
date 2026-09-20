@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, LogOut, Lock, EyeOff } from 'lucide-react';
+import { ShieldCheck, LogOut, EyeOff, FileText, CheckCircle2 } from 'lucide-react';
 import { CaseAuth } from './components/CaseAuth';
+import { ComplaintForm } from './components/ComplaintForm';
 
 export default function App() {
   const [currentCaseId, setCurrentCaseId] = useState<string | null>(() => {
     return localStorage.getItem('algox_active_case_id');
   });
   const [isNewCase, setIsNewCase] = useState<boolean>(false);
+  const [caseStatus, setCaseStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentCaseId) {
@@ -19,10 +21,17 @@ export default function App() {
   const handleLogin = (caseId: string, isNew: boolean) => {
     setCurrentCaseId(caseId);
     setIsNewCase(isNew);
+    setCaseStatus(null);
   };
 
   const handleLogout = () => {
     setCurrentCaseId(null);
+    setIsNewCase(false);
+    setCaseStatus(null);
+  };
+
+  const handleComplaintSubmitted = (status: string) => {
+    setCaseStatus(status);
     setIsNewCase(false);
   };
 
@@ -47,6 +56,9 @@ export default function App() {
               Algo<span style={{ color: '#3b82f6' }}>X</span>
             </h1>
             <span className="pillar-tag">Pillar 1: Total Anonymity</span>
+            <span className="pillar-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7' }}>
+              Pillar 2: Blind Server
+            </span>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.35rem' }}>
             Metadata-camouflaged workplace harassment reporting &amp; status tracking
@@ -84,20 +96,30 @@ export default function App() {
       <main>
         {!currentCaseId ? (
           <CaseAuth onLogin={handleLogin} />
+        ) : isNewCase ? (
+          <ComplaintForm caseId={currentCaseId} onSuccess={handleComplaintSubmitted} />
         ) : (
           <div className="card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <div className="icon-badge accent-emerald">
-                <Lock size={20} color="#34d399" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="icon-badge accent-emerald">
+                  <CheckCircle2 size={20} color="#34d399" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Active Case Tracker</h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Case ID: <code style={{ color: '#93c5fd' }}>{currentCaseId}</code>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                  {isNewCase ? 'Ready to File Complaint' : 'Case Session Active'}
-                </h2>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Authenticated anonymously as <code style={{ color: '#93c5fd' }}>{currentCaseId}</code>
-                </p>
-              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setIsNewCase(true)}
+                style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
+              >
+                <FileText size={14} />
+                Submit Additional Report
+              </button>
             </div>
 
             <div style={{
@@ -111,12 +133,10 @@ export default function App() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#93c5fd', fontSize: '0.85rem' }}>
                 <EyeOff size={16} />
-                <span>Zero identifiable metadata linked to this session.</span>
+                <span>Current Status: <strong style={{ color: '#34d399' }}>{caseStatus || 'Received'}</strong></span>
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                {isNewCase
-                  ? 'Your unique Case ID has been established. In the next step, you will enter complaint details which will be AES-encrypted before storage.'
-                  : 'You have accessed an existing case. Case status details and encrypted records will be loaded in subsequent steps.'}
+                Your encrypted case is stored safely. In upcoming tasks, admin management and padded/batched status polling will be linked to this portal.
               </p>
             </div>
           </div>
