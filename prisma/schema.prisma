@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Case {
+  id               String   @id @default(uuid())
+  caseId           String   @unique
+  encryptedContent String   // AES-256 encrypted payload
+  iv               String   // Initialization Vector (hex)
+  authTag          String   // GCM Auth Tag (hex)
+  internalStatus   String   @default("RECEIVED") // HR Internal state
+  publicStatus     String   @default("Received") // One of 4 public states: Received, In Review, Update Available, Closed
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  statusUpdates    StatusUpdateQueue[]
+}
+
+model StatusUpdateQueue {
+  id                 String   @id @default(uuid())
+  caseId             String
+  targetStatus       String
+  scheduledReleaseAt DateTime
+  released           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  case               Case     @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+}
