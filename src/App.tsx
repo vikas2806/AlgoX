@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, LogOut, EyeOff, FileText, CheckCircle2, User, UserCog } from 'lucide-react';
+import { ShieldCheck, LogOut, User, UserCog } from 'lucide-react';
 import { CaseAuth } from './components/CaseAuth';
 import { ComplaintForm } from './components/ComplaintForm';
 import { AdminPortal } from './components/AdminPortal';
+import { StatusPortal } from './components/StatusPortal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
@@ -10,7 +11,6 @@ export default function App() {
     return localStorage.getItem('algox_active_case_id');
   });
   const [isNewCase, setIsNewCase] = useState<boolean>(false);
-  const [caseStatus, setCaseStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentCaseId) {
@@ -23,17 +23,14 @@ export default function App() {
   const handleLogin = (caseId: string, isNew: boolean) => {
     setCurrentCaseId(caseId);
     setIsNewCase(isNew);
-    setCaseStatus(null);
   };
 
   const handleLogout = () => {
     setCurrentCaseId(null);
     setIsNewCase(false);
-    setCaseStatus(null);
   };
 
-  const handleComplaintSubmitted = (status: string) => {
-    setCaseStatus(status);
+  const handleComplaintSubmitted = (_status: string) => {
     setIsNewCase(false);
   };
 
@@ -111,44 +108,10 @@ export default function App() {
             ) : isNewCase ? (
               <ComplaintForm caseId={currentCaseId} onSuccess={handleComplaintSubmitted} />
             ) : (
-              <div className="card flex flex-col gap-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div className="icon-badge accent-emerald">
-                      <CheckCircle2 size={20} className="text-emerald-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-100">Case Active in System</h2>
-                      <p className="text-xs text-gray-400">
-                        Authenticated anonymously as <code className="text-blue-400 font-bold">{currentCaseId}</code>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setIsNewCase(true)}
-                      className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
-                    >
-                      <FileText size={14} />
-                      File Additional Report
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900/60 border border-white/10 rounded-xl p-5 flex flex-col gap-3">
-                  <div className="flex items-center gap-2 text-sm text-blue-300 font-medium">
-                    <EyeOff size={16} />
-                    <span>Four-State Public Status:</span>
-                    <span className="text-emerald-400 font-bold px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs">
-                      {caseStatus || 'Received'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    Your complaint ciphertext is stored in the database. In the next tasks (Task 5, 6, &amp; 7), we build the full four-state user status portal, response padding, and batched/jittered releases.
-                  </p>
-                </div>
-              </div>
+              <StatusPortal
+                caseId={currentCaseId}
+                onFileAdditional={() => setIsNewCase(true)}
+              />
             )}
           </div>
         )}

@@ -73,6 +73,43 @@ app.post('/api/cases/verify-id', async (req, res) => {
   }
 });
 
+// Task 5: Status portal (user side) — Fetch only the 4-state public status
+app.get('/api/cases/:caseId/status', async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    if (!caseId) {
+      res.status(400).json({ success: false, error: 'Case ID is required' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+    const caseRecord = await prisma.case.findUnique({
+      where: { caseId: trimmedId },
+      select: {
+        caseId: true,
+        publicStatus: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!caseRecord) {
+      res.status(404).json({ success: false, error: 'Case ID not found' });
+      return;
+    }
+
+    // Return ONLY the 4-state public status — strictly no internal HR details
+    res.json({
+      success: true,
+      caseId: caseRecord.caseId,
+      publicStatus: caseRecord.publicStatus,
+      updatedAt: caseRecord.updatedAt,
+    });
+  } catch (error) {
+    console.error('Error fetching case status:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch case status' });
+  }
+});
+
 // Pillar 2: Blind Server — Submit Complaint with AES-256 Encryption
 app.post('/api/complaints/submit', async (req, res) => {
   try {
