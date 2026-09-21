@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check } from 'lucide-react';
+import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check, UnlockKeyhole, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, FileSearch } from 'lucide-react';
 import { INTERNAL_STATUS_OPTIONS, mapInternalToPublic, PublicStatus } from '../lib/statusMapping';
 
 interface AdminCase {
@@ -21,6 +21,16 @@ interface QueueItem {
   createdAt: string;
 }
 
+interface DecryptedReport {
+  caseId: string;
+  category: string;
+  complaintText: string;
+  submittedAt: string;
+  decryptedAt: string;
+  ciphertextSize: number;
+  internalStatus: string;
+}
+
 export const AdminPortal = () => {
   const [cases, setCases] = useState<AdminCase[]>([]);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -37,6 +47,10 @@ export const AdminPortal = () => {
     jitterSec?: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [decryptedReport, setDecryptedReport] = useState<DecryptedReport | null>(null);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptError, setDecryptError] = useState<string | null>(null);
+  const [reportVisible, setReportVisible] = useState(false);
 
   const fetchCasesAndQueue = useCallback(async () => {
     setIsLoading(true);
@@ -78,6 +92,36 @@ export const AdminPortal = () => {
     setSelectedCaseId(c.caseId);
     setNewInternalStatus(c.internalStatus);
     setUpdateFeedback(null);
+    // Clear any previously decrypted report when switching cases
+    setDecryptedReport(null);
+    setDecryptError(null);
+    setReportVisible(false);
+  };
+
+  const handleDecrypt = async () => {
+    if (!selectedCaseId) return;
+    setIsDecrypting(true);
+    setDecryptError(null);
+    setDecryptedReport(null);
+    setReportVisible(false);
+    try {
+      const res = await fetch('/api/admin/cases/decrypt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caseId: selectedCaseId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDecryptedReport(data as DecryptedReport);
+        setReportVisible(true);
+      } else {
+        setDecryptError(data.error || 'Decryption failed.');
+      }
+    } catch {
+      setDecryptError('Network error during decryption.');
+    } finally {
+      setIsDecrypting(false);
+    }
   };
 
   const handleUpdateStatus = async (e: React.FormEvent) => {
@@ -366,6 +410,133 @@ export const AdminPortal = () => {
           )}
         </div>
       </div>
+
+      {/* Decrypted Report Viewer */}
+      {selectedCase && (
+        <div className="card flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <FileSearch size={16} />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-200">
+                  Authorized Incident Report Viewer
+                </h3>
+                <p className="text-xs text-gray-400">
+                  On-demand AES-256-GCM decryption for HR investigation. Case:{' '}
+                  <code className="text-amber-300 font-mono">{selectedCaseId}</code>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {decryptedReport && (
+                <button
+                  onClick={() => { setDecryptedReport(null); setReportVisible(false); setDecryptError(null); }}
+                  className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                >
+                  <Lock size={13} className="text-red-400" />
+                  Lock & Wipe
+                </button>
+              )}
+              <button
+                id="btn-decrypt-report"
+                onClick={handleDecrypt}
+                disabled={isDecrypting}
+                className="btn btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.2))', borderColor: 'rgba(245,158,11,0.4)', color: '#fcd34d' }}
+              >
+                <UnlockKeyhole size={13} />
+                {isDecrypting ? 'Decrypting...' : 'Decrypt & View Report'}
+              </button>
+            </div>
+          </div>
+
+          {/* Decrypt Error */}
+          {decryptError && (
+            <div className="flex items-center gap-2 text-xs bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl p-3">
+              <AlertCircle size={15} className="shrink-0" />
+              {decryptError}
+            </div>
+          )}
+
+          {/* Decrypted Content */}
+          {decryptedReport && reportVisible ? (
+            <div className="flex flex-col gap-3">
+              {/* Security Badge Row */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                  <ShieldCheck size={12} />
+                  AES-256-GCM Verified
+                </span>
+                <span className="text-[11px] font-mono text-gray-500">
+                  Ciphertext was {decryptedReport.ciphertextSize} bytes
+                </span>
+                <span className="ml-auto text-[11px] text-gray-500 font-mono">
+                  Decrypted at {new Date(decryptedReport.decryptedAt).toLocaleTimeString()}
+                </span>
+              </div>
+
+              {/* Meta Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-slate-900/80 border border-white/10 rounded-xl p-3.5">
+                  <div className="text-[10px] uppercase font-semibold text-gray-500 mb-1">Incident Category</div>
+                  <div className="text-sm font-semibold text-amber-300">{decryptedReport.category}</div>
+                </div>
+                <div className="bg-slate-900/80 border border-white/10 rounded-xl p-3.5">
+                  <div className="text-[10px] uppercase font-semibold text-gray-500 mb-1">Submitted At</div>
+                  <div className="text-sm font-mono text-gray-300">
+                    {new Date(decryptedReport.submittedAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Complaint Text Viewer */}
+              <div className="bg-slate-950/80 border border-amber-500/20 rounded-xl p-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1.5">
+                    <Eye size={11} />
+                    Incident Description — Decrypted Plaintext
+                  </div>
+                  <button
+                    onClick={() => setReportVisible(v => !v)}
+                    className="text-[10px] text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
+                  >
+                    <EyeOff size={11} />
+                    Hide
+                  </button>
+                </div>
+                <div
+                  className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap"
+                  style={{ fontFamily: 'var(--font-sans)', maxHeight: '280px', overflowY: 'auto' }}
+                >
+                  {decryptedReport.complaintText}
+                </div>
+              </div>
+
+              {/* Security Warning */}
+              <div className="flex items-start gap-2 text-[11px] text-amber-400/70 bg-amber-500/5 border border-amber-500/15 rounded-xl p-3">
+                <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                <span>
+                  This decrypted view exists only in browser memory and is not saved anywhere. Use <strong>"Lock & Wipe"</strong> to clear it from the UI when done.
+                </span>
+              </div>
+            </div>
+          ) : !decryptedReport ? (
+            <div className="py-8 text-center flex flex-col items-center gap-2 text-gray-500">
+              <Lock size={28} className="text-gray-700" />
+              <p className="text-sm">Report is encrypted at rest.</p>
+              <p className="text-xs">Click <strong className="text-amber-400">"Decrypt & View Report"</strong> to authorize on-demand decryption for investigation.</p>
+            </div>
+          ) : (
+            <div className="py-6 text-center flex flex-col items-center gap-2 text-gray-500">
+              <EyeOff size={24} className="text-gray-700" />
+              <p className="text-xs">Report is hidden. Click <strong className="text-gray-300">"Decrypt & View Report"</strong> again to re-display it.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Task 7: Batched Release Queue Telemetry & Live Monitor */}
       <div className="card flex flex-col gap-4">

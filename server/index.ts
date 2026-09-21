@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { prisma } from './prisma';
 import { generateCaseId } from './lib/generateCaseId';
-import { encryptComplaint } from './lib/crypto';
+import { encryptComplaint, decryptComplaint } from './lib/crypto';
 import { mapInternalToPublic } from './lib/statusMapping';
 import { sendPaddedJson } from './lib/padding';
 import { startBatchWorker, queueStatusUpdate } from './lib/batchWorker';
@@ -209,6 +209,65 @@ app.get('/api/admin/cases', async (_req, res) => {
   } catch (error) {
     console.error('Error fetching admin cases:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch cases' });
+  }
+});
+
+// HR Admin — Authorized On-Demand Complaint Decryption
+app.post('/api/admin/cases/decrypt', async (req, res) => {
+  try {
+    const { caseId } = req.body;
+
+    if (!caseId || typeof caseId !== 'string') {
+      res.status(400).json({ success: false, error: 'Case ID is required.' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+
+    const caseRecord = await prisma.case.findUnique({
+      where: { caseId: trimmedId },
+      select: {
+        caseId: true,
+        encryptedContent: true,
+        iv: true,
+        authTag: true,
+        internalStatus: true,
+        createdAt: true,
+      },
+    });
+
+    if (!caseRecord) {
+      res.status(404).json({ success: false, error: 'Case not found.' });
+      return;
+    }
+
+    const decryptedJson = decryptComplaint({
+      encryptedContent: caseRecord.encryptedContent,
+      iv: caseRecord.iv,
+      authTag: caseRecord.authTag,
+    });
+
+    const payload = JSON.parse(decryptedJson) as {
+      category: string;
+      text: string;
+      submittedAt: string;
+    };
+
+    console.log(`[AlgoX Admin] Case ${trimmedId} decrypted by authorized HR request.`);
+
+    res.json({
+      success: true,
+      caseId: caseRecord.caseId,
+      internalStatus: caseRecord.internalStatus,
+      category: payload.category,
+      complaintText: payload.text,
+      submittedAt: payload.submittedAt,
+      decryptedAt: new Date().toISOString(),
+      ciphertextSize: caseRecord.encryptedContent.length / 2,
+    });
+  } catch (error) {
+    console.error('Error decrypting complaint:', error);
+    res.status(500).json({ success: false, error: 'Decryption failed. Key mismatch or corrupted data.' });
   }
 });
 
