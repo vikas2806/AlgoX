@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Send, CheckCircle2, FileText, AlertCircle, Cpu } from 'lucide-react';
+import { Lock, Send, CheckCircle2, FileText, AlertCircle, ShieldCheck } from 'lucide-react';
 
 interface ComplaintFormProps {
   caseId: string;
@@ -28,7 +28,7 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!complaintText.trim()) {
-      setError('Please provide incident details.');
+      setError('Please describe what happened before submitting.');
       return;
     }
 
@@ -57,10 +57,10 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
           onSuccess(data.publicStatus || 'Received');
         }, 2200);
       } else {
-        setError(data.error || 'Failed to submit complaint.');
+        setError(data.error || 'Something went wrong. Please try again.');
       }
     } catch {
-      setError('Network error submitting complaint.');
+      setError('Could not connect. Please check your internet and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -68,22 +68,16 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="icon-badge accent-blue">
-            <FileText size={20} color="#60a5fa" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>File Confidential Report</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Bound anonymously to <code style={{ color: '#93c5fd' }}>{caseId}</code>
-            </p>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div className="icon-badge accent-blue">
+          <FileText size={20} color="#60a5fa" />
         </div>
-
-        <span className="pillar-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7' }}>
-          Pillar 2: Blind Server Active
-        </span>
+        <div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Submit Your Report</h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Linked to Report ID: <code style={{ color: '#93c5fd' }}>{caseId}</code>
+          </p>
+        </div>
       </div>
 
       {submissionProof ? (
@@ -111,14 +105,14 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
           </div>
           <div>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f3f4f6' }}>
-              Report Encrypted &amp; Stored Successfully
+              Report Submitted Successfully
             </h3>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-              Ciphertext ({submissionProof.ciphertextSize} bytes) secured in database. Plaintext wiped from memory.
+              Your report has been securely saved. Your identity remains completely private.
             </p>
           </div>
           <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-            Redirecting to anonymous status portal...
+            Taking you to your report status...
           </div>
         </div>
       ) : (
@@ -126,7 +120,7 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
           {/* Category */}
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-              INCIDENT TYPE
+              WHAT TYPE OF INCIDENT IS THIS?
             </label>
             <select
               id="select-category"
@@ -146,20 +140,20 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
           {/* Details */}
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-              INCIDENT DESCRIPTION (PLAINTEXT NEVER LOGGED)
+              WHAT HAPPENED?
             </label>
             <textarea
               id="textarea-complaint-text"
               className="input-field"
               rows={6}
-              placeholder="Describe the incident objectively. Avoid including your own personal identifying information (e.g. your name or personal phone number) to ensure absolute confidentiality..."
+              placeholder="Describe the incident in your own words. You don't need to include your name or any personal details — your identity is fully protected..."
               value={complaintText}
               onChange={(e) => setComplaintText(e.target.value)}
               style={{ resize: 'vertical', lineHeight: '1.5', fontFamily: 'var(--font-sans)', fontSize: '0.95rem' }}
             />
           </div>
 
-          {/* Blind Server Pillar Box */}
+          {/* Privacy assurance notice */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.6)',
             border: '1px solid rgba(255, 255, 255, 0.06)',
@@ -179,12 +173,12 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
               justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <Cpu size={16} color="#60a5fa" />
+              <ShieldCheck size={16} color="#60a5fa" />
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
-              <strong style={{ color: '#e5e7eb' }}>Blind Server Cryptographic Protocol:</strong>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              <strong style={{ color: '#e5e7eb' }}>Your privacy is protected.</strong>
               <br />
-              Your report is encrypted using <strong>AES-256-GCM</strong> on ingest. The backend database only stores encrypted ciphertext blocks, IVs, and authentication tags. Plaintext is never stored in files or server logs.
+              Your report is securely encrypted before being stored. No one can read it except authorized HR personnel. Your name and identity are never recorded.
             </div>
           </div>
 
@@ -206,12 +200,12 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
               {isSubmitting ? (
                 <>
                   <Lock size={16} />
-                  Encrypting &amp; Saving...
+                  Submitting securely...
                 </>
               ) : (
                 <>
                   <Send size={16} />
-                  Submit Encrypted Report
+                  Submit Report
                 </>
               )}
             </button>

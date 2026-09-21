@@ -51,12 +51,12 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
     e.preventDefault();
     const cleanId = existingIdInput.trim().toUpperCase();
     if (!cleanId) {
-      setError('Please enter a valid Case ID.');
+      setError('Please enter your Report ID.');
       return;
     }
 
     if (!cleanId.startsWith('CASE-')) {
-      setError('Case ID format should be CASE-XXXXXX');
+      setError('Report ID should look like CASE-XXXXXX');
       return;
     }
 
@@ -76,7 +76,7 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
         onLogin(cleanId, false);
       } else {
         // For MVP flexibility, if not found on server yet, allow user to continue or notify
-        setError(data.error || 'Case ID not found in system. Double-check your ID.');
+        setError(data.error || 'Report ID not found. Please double-check it.');
       }
     } catch {
       // If server check fails in demo, allow proceed
@@ -88,22 +88,22 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-      {/* Pillar 1: Total Anonymity / Generate New Case ID */}
+      {/* Start a New Report */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <div className="icon-badge accent-blue">
             <Sparkles size={20} color="#60a5fa" />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>New Report</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Make a New Report</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-              100% Anonymous • No Email or Identity
+              100% Anonymous · No personal info needed
             </p>
           </div>
         </div>
 
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
-          Your identity is never requested or stored. You are identified solely by a cryptographically generated one-time Case ID.
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.6' }}>
+          We never ask for your name, email, or phone number. You'll get a unique Report ID to track your case safely.
         </p>
 
         {!generatedId ? (
@@ -115,13 +115,13 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
             style={{ width: '100%' }}
           >
             <Shield size={18} />
-            {isGenerating ? 'Generating Secure ID...' : 'Generate New Case ID'}
+            {isGenerating ? 'Creating your Report ID...' : 'Start Anonymous Report'}
           </button>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="id-box">
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Your Generated Anonymous ID
+                Your Private Report ID
               </span>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
                 <code style={{ fontSize: '1.25rem', fontWeight: 700, color: '#93c5fd', letterSpacing: '0.05em' }}>
@@ -134,15 +134,15 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
                   style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                 >
                   {copied ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
-                  {copied ? 'Copied' : 'Copy'}
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
             </div>
 
             <div className="warning-banner">
               <AlertCircle size={16} color="#fbbf24" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <p style={{ fontSize: '0.8rem', color: '#fef3c7', lineHeight: '1.4' }}>
-                <strong>Save this ID now!</strong> We do not store email or phone numbers. If you lose this ID, you cannot check status updates.
+              <p style={{ fontSize: '0.8rem', color: '#fef3c7', lineHeight: '1.5' }}>
+                <strong>Save this ID before continuing.</strong> You'll need it later to check updates on your report. We don't store your contact info.
               </p>
             </div>
 
@@ -152,35 +152,35 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
               onClick={handleStartWithNew}
               style={{ width: '100%' }}
             >
-              Continue to Report Filing
+              Continue to Report
               <ArrowRight size={18} />
             </button>
           </div>
         )}
       </div>
 
-      {/* Existing Case Login */}
+      {/* Check an Existing Report */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <div className="icon-badge accent-purple">
             <KeyRound size={20} color="#c084fc" />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Access Existing Case</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Check My Report</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-              Check status with your Case ID
+              View updates on an existing report
             </p>
           </div>
         </div>
 
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.5' }}>
-          Enter your saved Case ID to log into your anonymous portal and check for updates.
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.6' }}>
+          Already submitted a report? Enter your Report ID below to see the latest status.
         </p>
 
         <form onSubmit={handleLoginExisting} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-              CASE ID
+              REPORT ID
             </label>
             <input
               id="input-existing-case-id"
@@ -208,7 +208,7 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
             style={{ width: '100%' }}
           >
             <KeyRound size={18} />
-            {isVerifying ? 'Verifying Case ID...' : 'Access Portal'}
+            {isVerifying ? 'Looking up your report...' : 'View My Report'}
           </button>
         </form>
       </div>

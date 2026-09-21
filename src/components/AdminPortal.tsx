@@ -211,14 +211,9 @@ export const AdminPortal = () => {
             <ShieldAlert size={22} className="text-purple-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-gray-100">HR Admin Internal Portal</h2>
-              <span className="pillar-tag bg-purple-500/10 text-purple-300 border-purple-500/20">
-                Pillar 3 &amp; 4: Batched Release &amp; 4-State Shield
-              </span>
-            </div>
+            <h2 className="text-xl font-bold text-gray-100">HR Admin Dashboard</h2>
             <p className="text-sm text-gray-400">
-              Manage confidential investigations. Updates are queued and released with random jitter to defeat network timing correlation attacks.
+              Review and manage confidential reports submitted by employees.
             </p>
           </div>
         </div>
@@ -230,7 +225,7 @@ export const AdminPortal = () => {
           className="btn btn-secondary text-sm flex items-center gap-2 self-stretch md:self-auto"
         >
           <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh Registry
+          Refresh
         </button>
       </div>
 
@@ -247,16 +242,16 @@ export const AdminPortal = () => {
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <h3 className="text-base font-semibold text-gray-200 flex items-center gap-2">
               <FileLock2 size={18} className="text-blue-400" />
-              Encrypted Case Registry ({cases.length})
+              All Reports ({cases.length})
             </h3>
-            <span className="text-xs text-gray-500 font-mono">SQLite DB Synchronized</span>
+            <span className="text-xs text-gray-500">Synced</span>
           </div>
 
           {cases.length === 0 ? (
             <div className="py-12 text-center text-gray-400 flex flex-col items-center gap-2">
               <Clock size={28} className="text-gray-600" />
-              <p>No complaints submitted yet.</p>
-              <p className="text-xs text-gray-500">Switch to User Portal to generate a Case ID and file a test report.</p>
+              <p>No reports submitted yet.</p>
+              <p className="text-xs text-gray-500">Reports from employees will appear here once submitted.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2 max-h-[480px] overflow-y-auto pr-1">
@@ -280,9 +275,7 @@ export const AdminPortal = () => {
                         </span>
                       </div>
                       <div className="text-xs text-gray-400 mt-1 flex items-center gap-2">
-                        <span>Internal: <strong className="text-gray-300">{c.internalStatus}</strong></span>
-                        <span>•</span>
-                        <span>Ciphertext: {c.ciphertextSize}B</span>
+                        <span>Stage: <strong className="text-gray-300">{c.internalStatus}</strong></span>
                       </div>
                     </div>
 
@@ -302,10 +295,10 @@ export const AdminPortal = () => {
         <div className="lg:col-span-5 card flex flex-col gap-4">
           <div className="border-b border-white/10 pb-3">
             <h3 className="text-base font-semibold text-gray-200">
-              Update Investigation Status
+              Update Report Status
             </h3>
             <p className="text-xs text-gray-400 mt-0.5">
-              Change internal HR state &amp; schedule jittered release
+              Change the status visible to the reporter
             </p>
           </div>
 
@@ -324,7 +317,7 @@ export const AdminPortal = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
-                  Internal HR Stage
+                  Investigation Stage
                 </label>
                 <select
                   id="select-internal-status"
@@ -334,20 +327,16 @@ export const AdminPortal = () => {
                 >
                   {INTERNAL_STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-slate-900 text-gray-200">
-                      {opt.label} ({opt.value})
+                      {opt.label}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* 4-State Mapping Preview */}
+              {/* Status Preview */}
               <div className="bg-slate-900/60 border border-white/10 rounded-xl p-3 flex flex-col gap-2">
-                <div className="text-xs font-semibold text-gray-400 uppercase flex items-center justify-between">
-                  <span>Public State Mapping</span>
-                  <span className="text-blue-400 font-mono text-[10px]">Strict 4-State Shield</span>
-                </div>
+                <div className="text-xs font-semibold text-gray-400 uppercase">Reporter Will See</div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-gray-400">Internal State</span>
                   <ArrowRight size={13} className="text-gray-500" />
                   <span className={`font-semibold px-2.5 py-1 rounded-full border ${getPublicStatusBadgeColor(previewPublicStatus)}`}>
                     {previewPublicStatus}
@@ -355,7 +344,7 @@ export const AdminPortal = () => {
                 </div>
               </div>
 
-              {/* Task 7: Batch / Jitter Toggle Option */}
+              {/* Delayed Release Toggle */}
               <div className="bg-cyan-950/20 border border-cyan-500/30 rounded-xl p-3 flex flex-col gap-2">
                 <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-cyan-300">
                   <input
@@ -366,13 +355,13 @@ export const AdminPortal = () => {
                   />
                   <span className="flex items-center gap-1.5">
                     <Shuffle size={14} className="text-cyan-400" />
-                    Apply Batched Release with Random Jitter (Pillar 3)
+                    Delay status update for extra privacy
                   </span>
                 </label>
                 <p className="text-[11px] text-gray-400 leading-normal pl-6">
                   {useBatchQueue
-                    ? 'Delays public status release by ~15-25 seconds with random jitter. Defeats observer timing correlation.'
-                    : 'Bypasses jitter queue for instant testing.'}
+                    ? 'The status update will be released after a short delay to protect privacy.'
+                    : 'Status update will apply immediately (for testing only).'}
                 </p>
               </div>
 
@@ -384,10 +373,10 @@ export const AdminPortal = () => {
                 }`}>
                   <CheckCircle size={16} className="shrink-0 mt-0.5" />
                   <div>
-                    <div>{updateFeedback.msg}</div>
+                    <div>{updateFeedback.isQueued ? `Status saved. Will be visible to reporter shortly.` : `Status updated successfully.`}</div>
                     {updateFeedback.delaySec && (
-                      <div className="text-[11px] text-gray-400 mt-1 font-mono">
-                        Jitter Window: {updateFeedback.delaySec}s (Base 15s + Jitter {updateFeedback.jitterSec}s)
+                      <div className="text-[11px] text-gray-400 mt-1">
+                        Estimated delay: ~{updateFeedback.delaySec} seconds
                       </div>
                     )}
                   </div>
@@ -400,12 +389,12 @@ export const AdminPortal = () => {
                 disabled={isUpdating}
                 className="btn btn-primary w-full mt-1"
               >
-                {isUpdating ? 'Scheduling Update...' : 'Commit Status Update'}
+                {isUpdating ? 'Saving...' : 'Save Status'}
               </button>
             </form>
           ) : (
             <div className="py-8 text-center text-gray-400 text-sm">
-              Select a case from the registry to update its status.
+              Select a report from the list to update its status.
             </div>
           )}
         </div>
@@ -421,10 +410,10 @@ export const AdminPortal = () => {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-gray-200">
-                  Authorized Incident Report Viewer
+                  View Report Details
                 </h3>
                 <p className="text-xs text-gray-400">
-                  On-demand AES-256-GCM decryption for HR investigation. Case:{' '}
+                  Report ID:{' '}
                   <code className="text-amber-300 font-mono">{selectedCaseId}</code>
                 </p>
               </div>
@@ -437,7 +426,7 @@ export const AdminPortal = () => {
                   className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
                 >
                   <Lock size={13} className="text-red-400" />
-                  Lock & Wipe
+                  Close Report
                 </button>
               )}
               <button
@@ -448,7 +437,7 @@ export const AdminPortal = () => {
                 style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.2))', borderColor: 'rgba(245,158,11,0.4)', color: '#fcd34d' }}
               >
                 <UnlockKeyhole size={13} />
-                {isDecrypting ? 'Decrypting...' : 'Decrypt & View Report'}
+                {isDecrypting ? 'Opening report...' : 'Open Report'}
               </button>
             </div>
           </div>
@@ -468,13 +457,10 @@ export const AdminPortal = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
                   <ShieldCheck size={12} />
-                  AES-256-GCM Verified
+                  Securely Verified
                 </span>
-                <span className="text-[11px] font-mono text-gray-500">
-                  Ciphertext was {decryptedReport.ciphertextSize} bytes
-                </span>
-                <span className="ml-auto text-[11px] text-gray-500 font-mono">
-                  Decrypted at {new Date(decryptedReport.decryptedAt).toLocaleTimeString()}
+                <span className="ml-auto text-[11px] text-gray-500">
+                  Opened at {new Date(decryptedReport.decryptedAt).toLocaleTimeString()}
                 </span>
               </div>
 
@@ -497,7 +483,7 @@ export const AdminPortal = () => {
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1.5">
                     <Eye size={11} />
-                    Incident Description — Decrypted Plaintext
+                    What the employee reported
                   </div>
                   <button
                     onClick={() => setReportVisible(v => !v)}
@@ -519,26 +505,26 @@ export const AdminPortal = () => {
               <div className="flex items-start gap-2 text-[11px] text-amber-400/70 bg-amber-500/5 border border-amber-500/15 rounded-xl p-3">
                 <AlertCircle size={13} className="shrink-0 mt-0.5" />
                 <span>
-                  This decrypted view exists only in browser memory and is not saved anywhere. Use <strong>"Lock & Wipe"</strong> to clear it from the UI when done.
+                  This report is only visible in your browser. Click <strong>"Close Report"</strong> when you're done reviewing it.
                 </span>
               </div>
             </div>
           ) : !decryptedReport ? (
             <div className="py-8 text-center flex flex-col items-center gap-2 text-gray-500">
               <Lock size={28} className="text-gray-700" />
-              <p className="text-sm">Report is encrypted at rest.</p>
-              <p className="text-xs">Click <strong className="text-amber-400">"Decrypt & View Report"</strong> to authorize on-demand decryption for investigation.</p>
+              <p className="text-sm">This report is securely stored.</p>
+              <p className="text-xs">Click <strong className="text-amber-400">"Open Report"</strong> to read the details.</p>
             </div>
           ) : (
             <div className="py-6 text-center flex flex-col items-center gap-2 text-gray-500">
               <EyeOff size={24} className="text-gray-700" />
-              <p className="text-xs">Report is hidden. Click <strong className="text-gray-300">"Decrypt & View Report"</strong> again to re-display it.</p>
+              <p className="text-xs">Report is hidden. Click <strong className="text-gray-300">"Open Report"</strong> again to view it.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Task 7: Batched Release Queue Telemetry & Live Monitor */}
+      {/* Pending Updates Queue */}
       <div className="card flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2.5">
@@ -547,10 +533,10 @@ export const AdminPortal = () => {
             </div>
             <div>
               <h3 className="text-base font-semibold text-gray-200">
-                Metadata Camouflage Batch Release Queue
+                Pending Status Updates
               </h3>
               <p className="text-xs text-gray-400">
-                Background worker polling every 3s to dispatch jittered status updates
+                Updates waiting to be sent to reporters
               </p>
             </div>
           </div>
@@ -562,13 +548,13 @@ export const AdminPortal = () => {
             className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 self-start sm:self-auto"
           >
             <Zap size={13} className="text-amber-400" />
-            {isFlushing ? 'Flushing...' : 'Force Flush Pending Queue'}
+            {isFlushing ? 'Sending...' : 'Send All Now'}
           </button>
         </div>
 
         {queue.length === 0 ? (
-          <div className="py-6 text-center text-gray-500 text-xs font-mono">
-            Queue is empty. Status updates will appear here when scheduled with jitter.
+          <div className="py-6 text-center text-gray-500 text-xs">
+            No pending updates. All reporters are up to date.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto pr-1">
@@ -595,7 +581,7 @@ export const AdminPortal = () => {
                           : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                       }`}
                     >
-                      {item.released ? 'RELEASED' : isPending ? 'QUEUED (JITTER)' : 'DISPATCHING'}
+                      {item.released ? 'SENT' : isPending ? 'PENDING' : 'SENDING'}
                     </span>
                   </div>
 

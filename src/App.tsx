@@ -40,22 +40,19 @@ export default function App() {
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
               <ShieldCheck size={20} className="text-white" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-white">
-              Algo<span className="text-blue-500">X</span>
+              Algo<span className="text-blue-400">X</span>
             </h1>
-            <span className="text-xs font-mono bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-bold">
-              MVP
-            </span>
           </div>
           <p className="text-sm text-gray-400 mt-1">
-            Metadata-camouflaged workplace harassment reporting &amp; status tracking
+            Safe, anonymous workplace reporting — your identity stays private.
           </p>
         </div>
 
-        {/* Global Nav Switcher: User View vs Admin Portal */}
+        {/* Tab Switcher */}
         <div className="flex items-center gap-3">
           <div className="bg-slate-900/90 p-1 rounded-xl border border-white/10 flex items-center gap-1 shadow-inner">
             <button
@@ -68,7 +65,7 @@ export default function App() {
               }`}
             >
               <User size={14} />
-              Victim / User Portal
+              My Report
             </button>
             <button
               id="tab-admin-view"
@@ -80,7 +77,7 @@ export default function App() {
               }`}
             >
               <UserCog size={14} />
-              HR Admin Portal
+              Admin
             </button>
           </div>
 
@@ -91,7 +88,7 @@ export default function App() {
               className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
             >
               <LogOut size={13} />
-              Exit ({currentCaseId})
+              Sign Out
             </button>
           )}
         </div>
