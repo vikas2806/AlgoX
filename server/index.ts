@@ -369,6 +369,110 @@ app.post('/api/admin/queue/flush', async (_req, res) => {
   }
 });
 
+// Problem 6 Feature: Secure Encrypted Follow-Up & Evidence Message Thread
+// Complainant and ICC Committee communicate anonymously without storing any plaintext
+app.get('/api/cases/:caseId/messages', async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    if (!caseId) {
+      res.status(400).json({ success: false, error: 'Case ID is required' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+    const caseRecord = await prisma.case.findUnique({
+      where: { caseId: trimmedId },
+      select: { id: true, caseId: true },
+    });
+
+    if (!caseRecord) {
+      res.status(404).json({ success: false, error: 'Case not found' });
+      return;
+    }
+
+    const rawMessages = await prisma.caseMessage.findMany({
+      where: { caseId: trimmedId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const messages = rawMessages.map((m) => {
+      let text = '[Unable to decrypt message]';
+      try {
+        text = decryptComplaint({
+          encryptedContent: m.encryptedContent,
+          iv: m.iv,
+          authTag: m.authTag,
+        });
+      } catch (err) {
+        console.error(`Failed to decrypt message ${m.id}:`, err);
+      }
+
+      return {
+        id: m.id,
+        sender: m.sender as 'COMPLAINANT' | 'ICC',
+        text,
+        createdAt: m.createdAt,
+      };
+    });
+
+    res.json({ success: true, caseId: trimmedId, messages });
+  } catch (error) {
+    console.error('Error fetching case messages:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch case messages' });
+  }
+});
+
+app.post('/api/cases/:caseId/messages', async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    const { messageText, sender } = req.body;
+
+    if (!caseId || !messageText || typeof messageText !== 'string' || !messageText.trim()) {
+      res.status(400).json({ success: false, error: 'Case ID and message text are required.' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+    const cleanSender = sender === 'ICC' ? 'ICC' : 'COMPLAINANT';
+
+    const caseRecord = await prisma.case.findUnique({
+      where: { caseId: trimmedId },
+      select: { id: true, caseId: true },
+    });
+
+    if (!caseRecord) {
+      res.status(404).json({ success: false, error: 'Case not found.' });
+      return;
+    }
+
+    // Encrypt the message text with AES-256-GCM before saving
+    const { encryptedContent, iv, authTag } = encryptComplaint(messageText.trim());
+
+    const created = await prisma.caseMessage.create({
+      data: {
+        caseId: trimmedId,
+        sender: cleanSender,
+        encryptedContent,
+        iv,
+        authTag,
+      },
+    });
+
+    console.log(`[AlgoX Server] Encrypted message stored for ${trimmedId} from ${cleanSender} | Ciphertext: ${encryptedContent.length / 2} bytes`);
+
+    res.json({
+      success: true,
+      messageId: created.id,
+      sender: created.sender,
+      createdAt: created.createdAt,
+      ciphertextSize: encryptedContent.length / 2,
+    });
+  } catch (error) {
+    console.error('Error sending case message:', error);
+    res.status(500).json({ success: false, error: 'Failed to send message.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`[AlgoX Server] Running on http://localhost:${PORT}`);
 });

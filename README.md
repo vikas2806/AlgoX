@@ -118,3 +118,7 @@ npm run dev
    - Inspect the **Metadata Camouflage Telemetry** panel at the bottom:
      - Notice the wire payload is bit-for-bit **1,024 Bytes (Constant)**.
      - Inspect the raw wire buffer to view the data vs camouflage noise byte distribution.
+4. **Confidential Follow-Up & Evidence Thread (ICC Back-and-Forth)**:
+   - In the **User Portal**, scroll to **Confidential Case Communications & Evidence**.
+   - Submit additional incident dates, witness details, or supplementary evidence.
+   - In the **Admin Portal**, view the encrypted thread under **Case Follow-Ups & Complainant Thread**, and post confidential inquiries back to the complainant. All messages are encrypted with AES-256-GCM before storage.

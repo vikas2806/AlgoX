@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check, UnlockKeyhole, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, FileSearch } from 'lucide-react';
+import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check, UnlockKeyhole, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, FileSearch, MessageSquare, Send } from 'lucide-react';
 import { INTERNAL_STATUS_OPTIONS, mapInternalToPublic, PublicStatus } from '../lib/statusMapping';
 
 interface AdminCase {
@@ -31,6 +31,13 @@ interface DecryptedReport {
   internalStatus: string;
 }
 
+interface CaseMessageItem {
+  id: string;
+  sender: 'COMPLAINANT' | 'ICC';
+  text: string;
+  createdAt: string;
+}
+
 export const AdminPortal = () => {
   const [cases, setCases] = useState<AdminCase[]>([]);
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -51,6 +58,14 @@ export const AdminPortal = () => {
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [decryptError, setDecryptError] = useState<string | null>(null);
   const [reportVisible, setReportVisible] = useState(false);
+
+  // ICC Follow-Up & Complainant Messages
+  const [caseMessages, setCaseMessages] = useState<CaseMessageItem[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [adminMessageText, setAdminMessageText] = useState('');
+  const [isSendingAdminMsg, setIsSendingAdminMsg] = useState(false);
+  const [adminMsgError, setAdminMsgError] = useState<string | null>(null);
+  const [adminMsgSuccess, setAdminMsgSuccess] = useState<string | null>(null);
 
   const fetchCasesAndQueue = useCallback(async () => {
     setIsLoading(true);
@@ -88,6 +103,21 @@ export const AdminPortal = () => {
     return () => clearInterval(interval);
   }, [fetchCasesAndQueue]);
 
+  const fetchCaseMessages = useCallback(async (caseId: string) => {
+    setIsLoadingMessages(true);
+    try {
+      const res = await fetch(`/api/cases/${caseId}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        setCaseMessages(data.messages || []);
+      }
+    } catch {
+      // silent
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, []);
+
   const handleCaseSelect = (c: AdminCase) => {
     setSelectedCaseId(c.caseId);
     setNewInternalStatus(c.internalStatus);
@@ -96,6 +126,7 @@ export const AdminPortal = () => {
     setDecryptedReport(null);
     setDecryptError(null);
     setReportVisible(false);
+    fetchCaseMessages(c.caseId);
   };
 
   const handleDecrypt = async () => {
@@ -167,6 +198,40 @@ export const AdminPortal = () => {
       setError('Network error updating status.');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleSendAdminMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCaseId || !adminMessageText.trim()) return;
+
+    setIsSendingAdminMsg(true);
+    setAdminMsgError(null);
+    setAdminMsgSuccess(null);
+
+    try {
+      const res = await fetch(`/api/cases/${selectedCaseId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: 'ICC',
+          messageText: adminMessageText.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAdminMessageText('');
+        setAdminMsgSuccess('Inquiry/response securely encrypted and sent to complainant.');
+        await fetchCaseMessages(selectedCaseId);
+        setTimeout(() => setAdminMsgSuccess(null), 4000);
+      } else {
+        setAdminMsgError(data.error || 'Failed to send inquiry.');
+      }
+    } catch {
+      setAdminMsgError('Network error sending inquiry.');
+    } finally {
+      setIsSendingAdminMsg(false);
     }
   };
 
@@ -521,6 +586,107 @@ export const AdminPortal = () => {
               <p className="text-xs">Report is hidden. Click <strong className="text-gray-300">"Open Report"</strong> again to view it.</p>
             </div>
           )}
+
+          {/* ── Problem 6: Confidential Follow-Up & Complainant Messages ── */}
+          <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={16} className="text-purple-400" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300">
+                  Case Follow-Ups & Complainant Thread ({caseMessages.length})
+                </h4>
+              </div>
+              <span className="text-[11px] text-gray-500 font-mono flex items-center gap-1">
+                <Lock size={11} className="text-emerald-400" />
+                End-to-End Encrypted
+              </span>
+            </div>
+
+            {/* Messages list */}
+            <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
+              {isLoadingMessages ? (
+                <div className="py-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+                  <RefreshCw size={13} className="animate-spin text-purple-400" />
+                  Loading communications...
+                </div>
+              ) : caseMessages.length === 0 ? (
+                <div className="py-4 text-center text-xs text-gray-500 bg-slate-900/40 rounded-lg p-3">
+                  No follow-up messages or inquiries yet for this case.
+                </div>
+              ) : (
+                caseMessages.map((msg) => {
+                  const isICC = msg.sender === 'ICC';
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`p-2.5 rounded-lg border text-xs flex flex-col gap-1 ${
+                        isICC
+                          ? 'bg-purple-950/20 border-purple-500/30 ml-3'
+                          : 'bg-blue-950/25 border-blue-500/30 mr-3'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`font-semibold ${isICC ? 'text-purple-300' : 'text-blue-300'}`}>
+                          {isICC ? 'ICC Committee' : 'Complainant (Follow-Up)'}
+                        </span>
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                        {msg.text}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* ICC Response Form */}
+            <form onSubmit={handleSendAdminMessage} className="flex flex-col gap-2 mt-1">
+              <textarea
+                className="input-field text-xs"
+                rows={2}
+                placeholder="Ask complainant for dates, witness names, hearing notices, or clarification..."
+                value={adminMessageText}
+                onChange={(e) => setAdminMessageText(e.target.value)}
+              />
+
+              {adminMsgError && (
+                <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded p-2 flex items-center gap-1.5">
+                  <AlertCircle size={13} />
+                  {adminMsgError}
+                </div>
+              )}
+
+              {adminMsgSuccess && (
+                <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded p-2 flex items-center gap-1.5">
+                  <CheckCircle size={13} />
+                  {adminMsgSuccess}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSendingAdminMsg || !adminMessageText.trim()}
+                  className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+                >
+                  {isSendingAdminMsg ? (
+                    <>
+                      <RefreshCw size={12} className="animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={12} />
+                      Post Confidential Inquiry to Complainant
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

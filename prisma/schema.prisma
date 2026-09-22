@@ -19,6 +19,7 @@ model Case {
   updatedAt        DateTime @updatedAt
 
   statusUpdates    StatusUpdateQueue[]
+  messages         CaseMessage[]
 }
 
 model StatusUpdateQueue {
@@ -30,4 +31,16 @@ model StatusUpdateQueue {
   createdAt          DateTime @default(now())
 
   case               Case     @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+}
+
+model CaseMessage {
+  id               String   @id @default(uuid())
+  caseId           String
+  sender           String   // 'COMPLAINANT' or 'ICC'
+  encryptedContent String   // AES-256 encrypted message payload
+  iv               String   // Hex IV
+  authTag          String   // GCM Auth Tag (hex)
+  createdAt        DateTime @default(now())
+
+  case             Case     @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
 }
