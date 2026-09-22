@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Send, CheckCircle2, FileText, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Lock, Send, CheckCircle2, FileText, AlertCircle, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 interface ComplaintFormProps {
   caseId: string;
@@ -20,6 +20,7 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
   const [complaintText, setComplaintText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [submissionProof, setSubmissionProof] = useState<{
     ciphertextSize: number;
     submittedAt: string;
@@ -56,6 +57,9 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
         setTimeout(() => {
           onSuccess(data.publicStatus || 'Received');
         }, 2200);
+      } else if (res.status === 409 && data.alreadySubmitted) {
+        // Complaint already on file — show dedicated warning, not a generic error
+        setAlreadySubmitted(true);
       } else {
         setError(data.error || 'Something went wrong. Please try again.');
       }
@@ -80,7 +84,54 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
         </div>
       </div>
 
-      {submissionProof ? (
+      {alreadySubmitted ? (
+        /* ── Duplicate-submission guard UI ─────────────────────────────── */
+        <div style={{
+          background: 'rgba(251, 191, 36, 0.07)',
+          border: '1px solid rgba(251, 191, 36, 0.28)',
+          borderRadius: '12px',
+          padding: '2rem 1.5rem',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem',
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'rgba(251, 191, 36, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <ShieldAlert size={32} color="#fbbf24" />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f3f4f6' }}>
+              Complaint Already Filed
+            </h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: '1.55' }}>
+              A complaint is already securely on file for{' '}
+              <code style={{ color: '#fcd34d' }}>{caseId}</code>. To protect the integrity
+              of your case, duplicate submissions are blocked. Use your Case ID to check
+              your current status.
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '8px',
+            padding: '0.65rem 1rem',
+            fontSize: '0.78rem',
+            color: '#9ca3af',
+            lineHeight: '1.5',
+          }}>
+            If you believe this is an error, your case is still safe — no data was overwritten.
+          </div>
+        </div>
+      ) : submissionProof ? (
+        /* ── Success confirmation ───────────────────────────────────────── */
         <div style={{
           background: 'rgba(16, 185, 129, 0.08)',
           border: '1px solid rgba(16, 185, 129, 0.25)',

@@ -125,6 +125,7 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
 });
 
 // Pillar 2: Blind Server — Submit Complaint with AES-256 Encryption
+// Guard: one complaint per Case ID — duplicate submissions are rejected with 409
 app.post('/api/complaints/submit', async (req, res) => {
   try {
     const { caseId, complaintText, category } = req.body;
@@ -135,6 +136,23 @@ app.post('/api/complaints/submit', async (req, res) => {
     }
 
     const trimmedId = caseId.trim().toUpperCase();
+
+    // Duplicate-submission guard: check whether a complaint already exists for this Case ID
+    const existing = await prisma.case.findUnique({
+      where: { caseId: trimmedId },
+      select: { caseId: true, encryptedContent: true },
+    });
+
+    if (existing && existing.encryptedContent && existing.encryptedContent.length > 0) {
+      // A complaint is already on file — reject silently with 409 to prevent overwrite
+      res.status(409).json({
+        success: false,
+        alreadySubmitted: true,
+        error: 'A complaint has already been filed under this Case ID. Duplicate submissions are not allowed.',
+      });
+      return;
+    }
+
     const cleanCategory = typeof category === 'string' ? category.trim() : 'General Harassment';
 
     const payloadToEncrypt = JSON.stringify({
@@ -145,8 +163,10 @@ app.post('/api/complaints/submit', async (req, res) => {
 
     const { encryptedContent, iv, authTag } = encryptComplaint(payloadToEncrypt);
 
+    // Create a fresh case record — never update an existing one
     const caseRecord = await prisma.case.upsert({
       where: { caseId: trimmedId },
+      // Update branch will only fire for cases without content (e.g. generated but not yet submitted)
       update: {
         encryptedContent,
         iv,
