@@ -120,21 +120,14 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
       }
     }
 
-    // Check if there is a pending queued update for transparency in demo
-    const pendingUpdate = await prisma.statusUpdateQueue.findFirst({
-      where: {
-        caseId: trimmedId,
-        released: false,
-      },
-      orderBy: { scheduledReleaseAt: 'desc' },
-    });
-
+    // Side-channel defense (Problem 9):
+    // Do NOT expose pending queue status to public callers — exposing pending state leaks
+    // the exact moment an internal HR update occurs before jitter release.
     sendPaddedJson(res, {
       success: true,
       caseId: caseRecord.caseId,
       publicStatus: caseRecord.publicStatus,
       updatedAt: caseRecord.updatedAt,
-      hasPendingBatchedUpdate: !!pendingUpdate,
       statusNote,
       statusNoteUpdatedAt: caseRecord.statusNoteUpdatedAt,
     });

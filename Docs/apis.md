@@ -143,7 +143,6 @@ Fetches the current 4-state public lifecycle status of a case and any official c
   "statusNote": "Preliminary review concluded. Formal inquiry scheduled for Friday at 2:00 PM. Please review protective accommodations...",
   "statusNoteUpdatedAt": "2026-09-20T18:45:00.000Z",
   "updatedAt": "2026-09-20T18:40:00.000Z",
-  "hasPendingBatchedUpdate": false,
   "_camouflage": { "targetSize": 1024, "wireConstant": true },
   "_padding": "a8f39b40..."
 }

@@ -25,6 +25,7 @@ Build a **secure, anonymous case-tracking portal** for Internal Complaints Commi
 | **Problem 4: Duplicate Submission Guard** | ✅ **BUILT** | Rejects overwrite attempts with HTTP 409 + dedicated UI card |
 | **Problem 5: Official Status Update Note Channel** | ✅ **BUILT** | Encrypted status note stored with Case & Queue + padded delivery + dedicated card |
 | **Problem 6: Two-Way Encrypted Follow-Up Thread** | ✅ **BUILT** | `CaseMessage` model + AES-256-GCM encrypted Complainant & ICC thread |
+| **Problem 9: Timing Side-Channel Elimination** | ✅ **BUILT** | Removed `hasPendingBatchedUpdate` from `/status` response to prevent transition timing inference |
 
 ---
 
@@ -58,11 +59,17 @@ Build a **secure, anonymous case-tracking portal** for Internal Complaints Commi
   - In `AdminPortal.tsx`, ICC Committee members can inspect the decrypted message thread and post confidential inquiries back to the complainant.
   - Every message is individually encrypted with AES-256-GCM at rest.
 
+### 4. Problem 9: Side-Channel Leak Elimination (`hasPendingBatchedUpdate`)
+- **Status**: **RESOLVED & BUILT** ✅
+- **Resolution**:
+  - Removed `hasPendingBatchedUpdate` and the database queue lookup from the public `GET /api/cases/:caseId/status` response.
+  - Previously, an observer polling `/status` could observe `hasPendingBatchedUpdate` flipping to `true`, revealing the exact timestamp when an internal HR meeting or status change occurred before the jitter delay expired.
+  - The public status response now solely reveals public information within the exact 1,024-byte padded wire format, completely closing the timing side-channel.
+
 ---
 
 ### 🟡 Remaining Items (Future Milestones)
 
 1. **Admin Authentication**: Add role-based authentication or API key for `/api/admin/*` endpoints.
 2. **Rate Limiting**: Add Express `rate-limit` middleware on `/api/cases/verify-id` and status endpoints.
-3. **Remove `hasPendingBatchedUpdate` from status response**: Eliminate the minor telemetry side-channel in production mode.
-4. **Audit Log Model**: Add a dedicated `CaseAuditLog` table for POSH Act compliance tracking of status transitions.
+3. **Audit Log Model**: Add a dedicated `CaseAuditLog` table for POSH Act compliance tracking of status transitions.
