@@ -129,17 +129,21 @@ Sends a confidential follow-up message, supplementary evidence note, or ICC inqu
 ---
 
 ### `GET /api/cases/:caseId/status`
-Fetches the current 4-state public lifecycle status of a case.
+Fetches the current 4-state public lifecycle status of a case and any official committee status update note.
 - **Camouflage Protocol**: Wire response is padded to **exactly 1024 bytes** with pseudorandom noise regardless of the status or error state.
 - **4 States Returned**: `Received` | `In Review` | `Update Available` | `Closed`
+- **Official Update Note (Problem 5)**: When HR attaches an official status update note or directive (especially during "Update Available"), it is decrypted in-memory from AES-256-GCM and delivered inside this constant-padded response.
 - **Response**: `200 OK` (Padded to 1024 bytes)
 - **Headers**: `X-Metadata-Camouflage: active`, `Content-Length: 1024`
 ```json
 {
   "success": true,
   "caseId": "CASE-7K9M2Q",
-  "publicStatus": "In Review",
+  "publicStatus": "Update Available",
+  "statusNote": "Preliminary review concluded. Formal inquiry scheduled for Friday at 2:00 PM. Please review protective accommodations...",
+  "statusNoteUpdatedAt": "2026-09-20T18:45:00.000Z",
   "updatedAt": "2026-09-20T18:40:00.000Z",
+  "hasPendingBatchedUpdate": false,
   "_camouflage": { "targetSize": 1024, "wireConstant": true },
   "_padding": "a8f39b40..."
 }
@@ -196,13 +200,15 @@ Authorized on-demand decryption of a specific complaint for HR investigation. De
 ---
 
 ### `POST /api/admin/cases/update-status`
-Updates the internal investigative status and schedules/applies the public 4-state mapping.
+Updates the internal investigative status and schedules/applies the public 4-state mapping with an optional encrypted status note/directive for the complainant.
 - **Request Body**:
 ```json
 {
   "caseId": "CASE-7K9M2Q",
-  "internalStatus": "WITNESS_INTERVIEWS",
-  "customPublicStatus": "In Review" // Optional override
+  "internalStatus": "ACTION_RECOMMENDED",
+  "customPublicStatus": "Update Available", // Optional override
+  "immediate": false, // Optional: bypass jitter queue
+  "statusNote": "Preliminary review complete. Formal committee meeting set for Friday at 2:00 PM." // Optional encrypted directive
 }
 ```
 - **Response**: `200 OK`
@@ -210,8 +216,17 @@ Updates the internal investigative status and schedules/applies the public 4-sta
 {
   "success": true,
   "caseId": "CASE-7K9M2Q",
-  "internalStatus": "WITNESS_INTERVIEWS",
-  "publicStatus": "In Review",
+  "internalStatus": "ACTION_RECOMMENDED",
+  "targetPublicStatus": "Update Available",
+  "currentPublicStatus": "In Review",
+  "hasAttachedNote": true,
+  "batchedRelease": {
+    "queueId": "uuid",
+    "scheduledReleaseAt": "2026-09-20T18:45:22.000Z",
+    "delaySeconds": 22,
+    "jitterSeconds": 7,
+    "releasedNow": false
+  },
   "updatedAt": "2026-09-20T18:45:00.000Z"
 }
 ```
@@ -253,12 +268,23 @@ Testing and evaluation tool: immediately flushes and releases all pending queued
 
 ## 3. System & Health Endpoints
 
-### `GET /api/health`
-Health check and server timestamp.
-- **Response**: `200 OK`
+---
+
+### `GET /api/cases/:caseId/status-note` (Problem 5: Official Status Update Note)
+Fetches the decrypted official committee status note / directive attached by HR for a case. Responses are padded to exactly 1024 bytes with pseudorandom noise to maintain metadata camouflage on wire inspection.
+- **Parameters**: `caseId` (string, URL path)
+- **Response**: `200 OK` (Padded to 1024 bytes)
+- **Headers**: `X-Metadata-Camouflage: active`, `Content-Length: 1024`
 ```json
 {
-  "status": "ok",
-  "timestamp": "2026-09-20T18:50:00.000Z"
+  "success": true,
+  "caseId": "CASE-7K9M2Q",
+  "publicStatus": "Update Available",
+  "hasNote": true,
+  "statusNote": "The Internal Complaints Committee has reviewed the evidence submitted. A formal hearing is scheduled for Friday at 2:00 PM in Conference Room C. Please confirm attendance.",
+  "updatedAt": "2026-09-20T18:45:00.000Z",
+  "_camouflage": { "targetSize": 1024, "wireConstant": true },
+  "_padding": "7f8b9a2c..."
 }
 ```
+

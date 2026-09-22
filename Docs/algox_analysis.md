@@ -23,6 +23,7 @@ Build a **secure, anonymous case-tracking portal** for Internal Complaints Commi
 | HR admin can view/update cases | ✅ | `AdminPortal.tsx` + admin routes in `server/index.ts` |
 | Network metadata telemetry (demo) | ✅ | `NetworkInspector.tsx` shows constant wire sizes |
 | **Problem 4: Duplicate Submission Guard** | ✅ **BUILT** | Rejects overwrite attempts with HTTP 409 + dedicated UI card |
+| **Problem 5: Official Status Update Note Channel** | ✅ **BUILT** | Encrypted status note stored with Case & Queue + padded delivery + dedicated card |
 | **Problem 6: Two-Way Encrypted Follow-Up Thread** | ✅ **BUILT** | `CaseMessage` model + AES-256-GCM encrypted Complainant & ICC thread |
 
 ---
@@ -39,7 +40,16 @@ Build a **secure, anonymous case-tracking portal** for Internal Complaints Commi
     ```
   - Frontend renders a prominent `ShieldAlert` card reassuring the user their report is safe and preventing duplicates.
 
-### 2. Problem 6: Complainant Follow-Up & Dynamic ICC Communication
+### 2. Problem 5: Secure Message Channel Back to Complainant for "Update Available"
+- **Status**: **RESOLVED & BUILT** ✅
+- **Resolution**:
+  - Added encrypted status note fields to `Case` and `StatusUpdateQueue` (`statusNoteEncrypted`, `statusNoteIv`, `statusNoteAuthTag`).
+  - Added `statusNote` field to `POST /api/admin/cases/update-status` enabling HR to attach an official directive or notice encrypted with AES-256-GCM.
+  - Queued status notes release simultaneously with the delayed/jittered public status release.
+  - Complainants receive the decrypted official notice inside the constant 1024-byte padded `/status` response and via `GET /api/cases/:caseId/status-note`.
+  - In `StatusPortal.tsx`, a dedicated **"Official Committee Update Notice"** card displays the directive when new information is available.
+
+### 3. Problem 6: Complainant Follow-Up & Dynamic ICC Communication
 - **Status**: **RESOLVED & BUILT** ✅
 - **Resolution**:
   - Added `CaseMessage` schema in Prisma (`id`, `caseId`, `sender`, `encryptedContent`, `iv`, `authTag`, `createdAt`).

@@ -57,6 +57,10 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
   const [messageError, setMessageError] = useState<string | null>(null);
   const [messageSuccessMsg, setMessageSuccessMsg] = useState<string | null>(null);
 
+  // Problem 5: Official Status Update Note from Committee
+  const [officialStatusNote, setOfficialStatusNote] = useState<string | null>(null);
+  const [statusNoteDate, setStatusNoteDate] = useState<string | null>(null);
+
   const followUpInputRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -76,6 +80,13 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         const data = JSON.parse(rawText);
         if (data.publicStatus) {
           setCurrentStatus(data.publicStatus as PublicStatus);
+        }
+        if (data.statusNote) {
+          setOfficialStatusNote(data.statusNote);
+          setStatusNoteDate(data.statusNoteUpdatedAt ? new Date(data.statusNoteUpdatedAt).toLocaleString() : null);
+        } else {
+          setOfficialStatusNote(null);
+          setStatusNoteDate(null);
         }
         setLastChecked(new Date().toLocaleTimeString());
       } else {
@@ -229,6 +240,35 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
             </div>
           )}
         </div>
+
+        {/* Problem 5: Official Decrypted Status Note / Directive */}
+        {officialStatusNote && (
+          <div className="bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/40 rounded-2xl p-5 flex flex-col gap-3 shadow-lg shadow-purple-950/20">
+            <div className="flex items-center justify-between border-b border-purple-500/20 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center">
+                  <BellRing size={15} className="text-purple-300" />
+                </div>
+                <h4 className="text-sm font-bold text-purple-200">
+                  Official Committee Update Notice
+                </h4>
+              </div>
+              <span className="text-[11px] text-purple-300/80 font-mono flex items-center gap-1">
+                <Lock size={11} className="text-emerald-400" />
+                Confidential AES-256 Directive
+              </span>
+            </div>
+
+            <div className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap bg-black/20 p-3.5 rounded-xl border border-white/5">
+              {officialStatusNote}
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
+              <span>Attached directly by the Internal Complaints Committee (ICC).</span>
+              {statusNoteDate && <span className="font-mono text-purple-300/70">Issued: {statusNoteDate}</span>}
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="flex flex-col gap-3 pt-2">

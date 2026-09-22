@@ -67,6 +67,9 @@ export const AdminPortal = () => {
   const [adminMsgError, setAdminMsgError] = useState<string | null>(null);
   const [adminMsgSuccess, setAdminMsgSuccess] = useState<string | null>(null);
 
+  // Problem 5: Official Status Update Note for Complainant
+  const [statusNoteText, setStatusNoteText] = useState('');
+
   const fetchCasesAndQueue = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -126,6 +129,7 @@ export const AdminPortal = () => {
     setDecryptedReport(null);
     setDecryptError(null);
     setReportVisible(false);
+    setStatusNoteText('');
     fetchCaseMessages(c.caseId);
   };
 
@@ -171,12 +175,14 @@ export const AdminPortal = () => {
           caseId: selectedCaseId,
           internalStatus: newInternalStatus,
           immediate: !useBatchQueue,
+          statusNote: statusNoteText.trim(),
         }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
+        setStatusNoteText('');
         if (data.batchedRelease && !data.batchedRelease.releasedNow) {
           setUpdateFeedback({
             msg: `Case ${data.caseId} updated internally. Public release queued with metadata jitter.`,
@@ -407,6 +413,34 @@ export const AdminPortal = () => {
                     {previewPublicStatus}
                   </span>
                 </div>
+              </div>
+
+              {/* Problem 5: Official Status Note / Directive for Complainant */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-400 uppercase flex items-center gap-1.5">
+                    <Lock size={12} className="text-purple-400" />
+                    Official Status Note / Directive
+                  </label>
+                  <span className="text-[10px] text-gray-500 font-mono">AES-256 Encrypted</span>
+                </div>
+                <textarea
+                  id="textarea-status-note"
+                  className="input-field text-xs"
+                  rows={3}
+                  placeholder={
+                    previewPublicStatus === 'Update Available'
+                      ? 'e.g. "Preliminary hearings concluded. Confidential proceeding scheduled for Friday at 2:00 PM in Room C. Please confirm attendance..."'
+                      : 'Optional: Attach a confidential official status note visible to the reporter once released...'
+                  }
+                  value={statusNoteText}
+                  onChange={(e) => setStatusNoteText(e.target.value)}
+                />
+                {previewPublicStatus === 'Update Available' && !statusNoteText && (
+                  <p className="text-[11px] text-purple-300/80 flex items-center gap-1">
+                    💡 Recommended: Attach an official notice so the complainant understands what update is available.
+                  </p>
+                )}
               </div>
 
               {/* Delayed Release Toggle */}

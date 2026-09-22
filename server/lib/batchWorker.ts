@@ -19,19 +19,34 @@ export function calculateJitteredReleaseTime(
   return { scheduledAt, delaySec: totalDelaySec, jitterSec };
 }
 
+export interface EncryptedNotePayload {
+  encryptedContent: string;
+  iv: string;
+  authTag: string;
+}
+
 /**
  * Queues a status update for delayed/batched release with random jitter.
  */
 export async function queueStatusUpdate(
   caseId: string,
   targetStatus: string,
-  immediate: boolean = false
+  immediate: boolean = false,
+  notePayload?: EncryptedNotePayload | null
 ) {
   if (immediate) {
     // Immediate bypass (if requested for test or initial submission)
+    const updateData: Record<string, unknown> = { publicStatus: targetStatus };
+    if (notePayload) {
+      updateData.statusNoteEncrypted = notePayload.encryptedContent;
+      updateData.statusNoteIv = notePayload.iv;
+      updateData.statusNoteAuthTag = notePayload.authTag;
+      updateData.statusNoteUpdatedAt = new Date();
+    }
+
     await prisma.case.update({
       where: { caseId },
-      data: { publicStatus: targetStatus },
+      data: updateData,
     });
     return { releasedNow: true, scheduledAt: new Date() };
   }
@@ -42,6 +57,9 @@ export async function queueStatusUpdate(
     data: {
       caseId,
       targetStatus,
+      targetNoteEncrypted: notePayload?.encryptedContent || null,
+      targetNoteIv: notePayload?.iv || null,
+      targetNoteAuthTag: notePayload?.authTag || null,
       scheduledReleaseAt: scheduledAt,
       released: false,
     },
@@ -57,6 +75,7 @@ export async function queueStatusUpdate(
     delaySeconds: delaySec,
     jitterSeconds: jitterSec,
     releasedNow: false,
+    hasAttachedNote: !!notePayload,
   };
 }
 
@@ -79,10 +98,19 @@ export function startBatchWorker(intervalMs: number = 3000) {
       });
 
       for (const update of dueUpdates) {
-        // Apply public status to case
+        // Prepare case update payload
+        const updateData: Record<string, unknown> = { publicStatus: update.targetStatus };
+        if (update.targetNoteEncrypted) {
+          updateData.statusNoteEncrypted = update.targetNoteEncrypted;
+          updateData.statusNoteIv = update.targetNoteIv;
+          updateData.statusNoteAuthTag = update.targetNoteAuthTag;
+          updateData.statusNoteUpdatedAt = new Date();
+        }
+
+        // Apply public status (and note if attached) to case
         await prisma.case.update({
           where: { caseId: update.caseId },
-          data: { publicStatus: update.targetStatus },
+          data: updateData,
         });
 
         // Mark queue record as released

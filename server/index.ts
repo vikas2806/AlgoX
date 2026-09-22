@@ -94,12 +94,30 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
         caseId: true,
         publicStatus: true,
         updatedAt: true,
+        statusNoteEncrypted: true,
+        statusNoteIv: true,
+        statusNoteAuthTag: true,
+        statusNoteUpdatedAt: true,
       },
     });
 
     if (!caseRecord) {
       sendPaddedJson(res, { success: false, error: 'Case not found' });
       return;
+    }
+
+    // Decrypt official status note if attached by HR
+    let statusNote: string | null = null;
+    if (caseRecord.statusNoteEncrypted && caseRecord.statusNoteIv && caseRecord.statusNoteAuthTag) {
+      try {
+        statusNote = decryptComplaint({
+          encryptedContent: caseRecord.statusNoteEncrypted,
+          iv: caseRecord.statusNoteIv,
+          authTag: caseRecord.statusNoteAuthTag,
+        });
+      } catch (err) {
+        console.error('Failed to decrypt status note:', err);
+      }
     }
 
     // Check if there is a pending queued update for transparency in demo
@@ -117,6 +135,8 @@ app.get('/api/cases/:caseId/status', async (req, res) => {
       publicStatus: caseRecord.publicStatus,
       updatedAt: caseRecord.updatedAt,
       hasPendingBatchedUpdate: !!pendingUpdate,
+      statusNote,
+      statusNoteUpdatedAt: caseRecord.statusNoteUpdatedAt,
     });
   } catch (error) {
     console.error('Error fetching case status:', error);
@@ -292,9 +312,10 @@ app.post('/api/admin/cases/decrypt', async (req, res) => {
 });
 
 // Task 7: HR Admin — Update status via Batched / Jittered Queue
+// Problem 5: Optionally attach an encrypted official status note/directive for the complainant
 app.post('/api/admin/cases/update-status', async (req, res) => {
   try {
-    const { caseId, internalStatus, customPublicStatus, immediate } = req.body;
+    const { caseId, internalStatus, customPublicStatus, immediate, statusNote } = req.body;
 
     if (!caseId || !internalStatus) {
       res.status(400).json({ success: false, error: 'Case ID and internal status are required.' });
@@ -312,8 +333,16 @@ app.post('/api/admin/cases/update-status', async (req, res) => {
       },
     });
 
+    // If an official status note is provided, encrypt it with AES-256-GCM before queueing
+    let notePayload = null;
+    if (statusNote && typeof statusNote === 'string' && statusNote.trim().length > 0) {
+      const { encryptedContent, iv, authTag } = encryptComplaint(statusNote.trim());
+      notePayload = { encryptedContent, iv, authTag };
+      console.log(`[AlgoX Server] Official status note encrypted for ${trimmedId} | Ciphertext: ${encryptedContent.length / 2} bytes`);
+    }
+
     // Enqueue public release with random jitter to prevent timing attacks
-    const queueResult = await queueStatusUpdate(trimmedId, targetPublicStatus, !!immediate);
+    const queueResult = await queueStatusUpdate(trimmedId, targetPublicStatus, !!immediate, notePayload);
 
     res.json({
       success: true,
@@ -322,6 +351,7 @@ app.post('/api/admin/cases/update-status', async (req, res) => {
       targetPublicStatus,
       currentPublicStatus: updatedCase.publicStatus,
       batchedRelease: queueResult,
+      hasAttachedNote: !!notePayload,
       updatedAt: updatedCase.updatedAt,
     });
   } catch (error) {
@@ -352,9 +382,17 @@ app.post('/api/admin/queue/flush', async (_req, res) => {
     });
 
     for (const item of pending) {
+      const updateData: Record<string, unknown> = { publicStatus: item.targetStatus };
+      if (item.targetNoteEncrypted) {
+        updateData.statusNoteEncrypted = item.targetNoteEncrypted;
+        updateData.statusNoteIv = item.targetNoteIv;
+        updateData.statusNoteAuthTag = item.targetNoteAuthTag;
+        updateData.statusNoteUpdatedAt = new Date();
+      }
+
       await prisma.case.update({
         where: { caseId: item.caseId },
-        data: { publicStatus: item.targetStatus },
+        data: updateData,
       });
       await prisma.statusUpdateQueue.update({
         where: { id: item.id },
@@ -366,6 +404,61 @@ app.post('/api/admin/queue/flush', async (_req, res) => {
   } catch (error) {
     console.error('Error flushing queue:', error);
     res.status(500).json({ success: false, error: 'Failed to flush queue' });
+  }
+});
+
+// Problem 5: Dedicated Endpoint for Encrypted Official Status Note / Directive
+// Padded to 1024 bytes with pseudorandom noise for side-channel defense
+app.get('/api/cases/:caseId/status-note', async (req, res) => {
+  try {
+    const { caseId } = req.params;
+    if (!caseId) {
+      sendPaddedJson(res, { success: false, error: 'Case ID is required' });
+      return;
+    }
+
+    const trimmedId = caseId.trim().toUpperCase();
+    const caseRecord = await prisma.case.findUnique({
+      where: { caseId: trimmedId },
+      select: {
+        caseId: true,
+        publicStatus: true,
+        statusNoteEncrypted: true,
+        statusNoteIv: true,
+        statusNoteAuthTag: true,
+        statusNoteUpdatedAt: true,
+      },
+    });
+
+    if (!caseRecord) {
+      sendPaddedJson(res, { success: false, error: 'Case not found' });
+      return;
+    }
+
+    let statusNote: string | null = null;
+    if (caseRecord.statusNoteEncrypted && caseRecord.statusNoteIv && caseRecord.statusNoteAuthTag) {
+      try {
+        statusNote = decryptComplaint({
+          encryptedContent: caseRecord.statusNoteEncrypted,
+          iv: caseRecord.statusNoteIv,
+          authTag: caseRecord.statusNoteAuthTag,
+        });
+      } catch (err) {
+        console.error('Error decrypting status note:', err);
+      }
+    }
+
+    sendPaddedJson(res, {
+      success: true,
+      caseId: caseRecord.caseId,
+      publicStatus: caseRecord.publicStatus,
+      hasNote: !!statusNote,
+      statusNote,
+      updatedAt: caseRecord.statusNoteUpdatedAt,
+    });
+  } catch (error) {
+    console.error('Error fetching status note:', error);
+    sendPaddedJson(res, { success: false, error: 'Failed to fetch status note' });
   }
 });
 
