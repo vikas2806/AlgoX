@@ -38,7 +38,7 @@ ENCRYPTION_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
 ## 3. Database Initialization
 
-Synchronize the SQLite database with Prisma schema:
+Synchronize the SQLite database with the Prisma schema (creates tables for `Case`, `StatusUpdateQueue`, and `CaseMessage`):
 
 ```bash
 npx prisma db push

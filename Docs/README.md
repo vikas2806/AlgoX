@@ -43,6 +43,7 @@ Users authenticate solely using a cryptographically generated one-time Case ID (
 The backend stores and relays complaint reports without ever possessing the ability to read them.
 - All complaint text is encrypted upon ingest using standard **AES-256-GCM** with 96-bit initialization vectors (IV) and 128-bit authentication tags.
 - Plaintext is **never** written to database columns, temporary caches, or server logs.
+- **Case Immutability & Anti-Overwrite Guard**: Once a report is submitted, its encrypted payload cannot be replaced or overwritten. Duplicate submission attempts are rejected with HTTP `409 Conflict`.
 
 ### 3. Metadata Camouflage
 Side-channel attacks are defeated through two cryptographic defenses:
@@ -55,6 +56,12 @@ Regardless of the internal complexity of HR's investigative workflow (e.g., Assi
 2. `In Review`
 3. `Update Available`
 4. `Closed`
+
+### 5. Confidential Follow-Up & Evidence Channel
+Real ICC proceedings require dynamic two-way communication without compromising anonymity:
+- Complainants can submit supplementary incident dates, witness details, or evidence notes at any time.
+- ICC Committee members can post confidential inquiries or hearing notices directly to the case thread.
+- Every message is individually encrypted with **AES-256-GCM** at rest.
 
 ---
 
@@ -118,3 +125,7 @@ npm run dev
    - Inspect the **Metadata Camouflage Telemetry** panel at the bottom:
      - Notice the wire payload is bit-for-bit **1,024 Bytes (Constant)**.
      - Inspect the raw wire buffer to view the data vs camouflage noise byte distribution.
+4. **Confidential Follow-Up & Evidence Thread (ICC Back-and-Forth)**:
+   - In the **User Portal**, scroll to **Confidential Case Communications & Evidence**.
+   - Submit additional incident dates, witness details, or supplementary evidence.
+   - In the **Admin Portal**, view the encrypted thread under **Case Follow-Ups & Complainant Thread**, and post confidential inquiries back to the complainant. All messages are encrypted with AES-256-GCM before storage.

@@ -16,6 +16,7 @@ Employees filing sensitive workplace harassment reports face risks of retaliatio
 - Ingested complaint text is encrypted immediately with `AES-256-GCM`.
 - The SQLite database only stores hex ciphertexts, IVs, and GCM authentication tags.
 - Zero plaintext logging or storage.
+- **Anti-Overwrite Guard (Problem 4)**: Existing complaints are immutable; duplicate submissions to the same Case ID are rejected with HTTP `409 Conflict`.
 
 ### Pillar 3: Metadata Camouflage
 - All status responses are uniformly padded to an exact 1,024-byte wire size with pseudorandom noise.
@@ -29,6 +30,12 @@ Employees filing sensitive workplace harassment reports face risks of retaliatio
   3. `Update Available`
   4. `Closed`
 
+### Pillar 5: Confidential Follow-Up & Evidence Channel (Problem 6)
+- Enables continuous asynchronous communication between the anonymous complainant and the ICC committee.
+- Complainant can provide supplementary evidence, incident dates, or witness names.
+- ICC committee can post inquiries or hearing notices directly to the case thread.
+- All messages are individually encrypted with `AES-256-GCM`.
+
 ---
 
 ## 3. Threat Model & Mitigations
@@ -40,3 +47,5 @@ Employees filing sensitive workplace harassment reports face risks of retaliatio
 | Database Breach | Compromised Server DB | AES-256-GCM Ciphertext Storage |
 | Identity Attribution | Corporate Access Logs | Random Case-ID Login (Zero PII) |
 | Workflow Eavesdropping | Side-Channel Snooper | Strict 4-State Public Projection |
+| Report Overwrite / Tampering | Rogue Actor Re-using Case ID | Case Immutability Guard (HTTP 409) |
+| Lack of Evidence / Follow-Up | Stalled ICC Investigations | End-to-End Encrypted Message Thread |

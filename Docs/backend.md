@@ -25,9 +25,11 @@ This document details the backend architectural design, cryptographic storage pr
 
 - **Algorithm**: `AES-256-GCM` (Galois/Counter Mode) via Node's native `crypto` module.
 - **Key Management**: 256-bit symmetric key (`ENCRYPTION_KEY`).
-- **Initialization Vector (IV)**: Fresh 96-bit (12-byte) cryptographically secure IV generated per complaint.
+- **Initialization Vector (IV)**: Fresh 96-bit (12-byte) cryptographically secure IV generated per complaint and message.
 - **Integrity Authentication Tag**: 128-bit (16-byte) GCM authentication tag stored to verify ciphertext tamper-resistance.
 - **Zero Plaintext Invariant**: Plaintext is never written to disk, SQLite columns, temporary caches, or console logs.
+- **Case Immutability & Anti-Overwrite Guard**: Once a complaint has been ingested for a given `Case ID`, its encrypted payload is locked. Any duplicate submission attempt triggers a database check and is rejected with HTTP `409 Conflict`, preventing silent overwriting of reports.
+- **Confidential Case Communications (Problem 6)**: Complainant follow-ups (dates, witnesses, evidence) and ICC inquiries are individual encrypted payloads stored in `CaseMessage` records, decrypted strictly on-demand in memory.
 
 ---
 
@@ -71,6 +73,8 @@ The public API strictly abstracts all internal activity into 4 discrete public s
 - `internalStatus`: Detailed HR Workflow Stage
 - `publicStatus`: Four-State Projected Public Label
 - `createdAt` / `updatedAt`: Timestamps
+- `statusUpdates`: Relation to `StatusUpdateQueue[]`
+- `messages`: Relation to `CaseMessage[]`
 
 ### Model: `StatusUpdateQueue`
 - `id`: UUID Primary Key
@@ -78,3 +82,12 @@ The public API strictly abstracts all internal activity into 4 discrete public s
 - `targetStatus`: Scheduled public status
 - `scheduledReleaseAt`: Target release timestamp with jitter
 - `released`: Boolean flag indicating execution status
+
+### Model: `CaseMessage` (Problem 6)
+- `id`: UUID Primary Key
+- `caseId`: Foreign key to `Case.caseId` (cascade delete)
+- `sender`: `'COMPLAINANT'` | `'ICC'`
+- `encryptedContent`: AES-256-GCM Hex Ciphertext
+- `iv`: 12-byte Hex IV
+- `authTag`: 16-byte Hex Authentication Tag
+- `createdAt`: Timestamp

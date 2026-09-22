@@ -45,6 +45,10 @@ Verifies if an existing Case ID is registered in the database. Padded to constan
 
 ### `POST /api/complaints/submit`
 Ingests a confidential harassment report. **Encrypts payload with AES-256-GCM before saving to database**. Server never stores or logs the plaintext content.
+
+**Security Guard — Duplicate Submission Prevention (Problem 4)**:
+If a complaint has already been submitted for the specified `caseId`, the request is rejected with HTTP `409 Conflict` to prevent overwriting existing report evidence.
+
 - **Request Body**:
 ```json
 {
@@ -53,7 +57,7 @@ Ingests a confidential harassment report. **Encrypts payload with AES-256-GCM be
   "complaintText": "Detailed incident notes..."
 }
 ```
-- **Response**: `200 OK`
+- **Success Response**: `200 OK`
 ```json
 {
   "success": true,
@@ -61,6 +65,64 @@ Ingests a confidential harassment report. **Encrypts payload with AES-256-GCM be
   "publicStatus": "Received",
   "submittedAt": "2026-09-20T18:35:00.000Z",
   "ciphertextSize": 218
+}
+```
+- **Duplicate Error Response**: `409 Conflict`
+```json
+{
+  "success": false,
+  "alreadySubmitted": true,
+  "error": "A complaint has already been filed under this Case ID. Duplicate submissions are not allowed."
+}
+```
+
+---
+
+### `GET /api/cases/:caseId/messages`
+Fetches all confidential follow-up messages and committee inquiries for a case. Ciphertexts stored in SQLite are decrypted in-memory using AES-256-GCM.
+- **Parameters**: `caseId` (string, URL path)
+- **Response**: `200 OK`
+```json
+{
+  "success": true,
+  "caseId": "CASE-7K9M2Q",
+  "messages": [
+    {
+      "id": "c7a8b9e1-...",
+      "sender": "COMPLAINANT",
+      "text": "Incident occurred outside conference room B on March 12 at 4:30 PM.",
+      "createdAt": "2026-09-20T19:00:00.000Z"
+    },
+    {
+      "id": "d8b9c0f2-...",
+      "sender": "ICC",
+      "text": "Thank you for the clarification. Are there any witnesses you wish to name?",
+      "createdAt": "2026-09-20T19:15:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/cases/:caseId/messages`
+Sends a confidential follow-up message, supplementary evidence note, or ICC inquiry. Encrypts message text using AES-256-GCM prior to storage.
+- **Parameters**: `caseId` (string, URL path)
+- **Request Body**:
+```json
+{
+  "sender": "COMPLAINANT", // or "ICC"
+  "messageText": "Witnesses present were Alex and Jordan from Marketing."
+}
+```
+- **Response**: `200 OK`
+```json
+{
+  "success": true,
+  "messageId": "e9c0d1a3-...",
+  "sender": "COMPLAINANT",
+  "createdAt": "2026-09-20T19:20:00.000Z",
+  "ciphertextSize": 68
 }
 ```
 
@@ -151,6 +213,39 @@ Updates the internal investigative status and schedules/applies the public 4-sta
   "internalStatus": "WITNESS_INTERVIEWS",
   "publicStatus": "In Review",
   "updatedAt": "2026-09-20T18:45:00.000Z"
+}
+```
+
+---
+
+### `GET /api/admin/queue`
+Retrieves pending and recent public status updates held in the metadata camouflage jitter queue.
+- **Response**: `200 OK`
+```json
+{
+  "success": true,
+  "queue": [
+    {
+      "id": "uuid",
+      "caseId": "CASE-7K9M2Q",
+      "targetStatus": "In Review",
+      "scheduledReleaseAt": "2026-09-20T18:45:22.000Z",
+      "released": false,
+      "createdAt": "2026-09-20T18:45:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/admin/queue/flush`
+Testing and evaluation tool: immediately flushes and releases all pending queued status updates to public view.
+- **Response**: `200 OK`
+```json
+{
+  "success": true,
+  "flushedCount": 2
 }
 ```
 
