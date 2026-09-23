@@ -1,20 +1,29 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { prisma } from './prisma';
 import { generateCaseId } from './lib/generateCaseId';
 import { encryptComplaint, decryptComplaint } from './lib/crypto';
 import { mapInternalToPublic } from './lib/statusMapping';
 import { sendPaddedJson } from './lib/padding';
 import { startBatchWorker, queueStatusUpdate } from './lib/batchWorker';
+import { requireAdminAuth, requireAdminRole, AuthenticatedRequest } from './middleware/auth';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET || 'algox-super-secret-jwt-key-2026';
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Start the background batch & jitter release worker
 startBatchWorker(3000);
@@ -212,8 +221,146 @@ app.post('/api/complaints/submit', async (req, res) => {
   }
 });
 
+// ==================== HR ADMIN AUTHENTICATION & RBAC ENDPOINTS ====================
+
+// Admin Login
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+      res.status(400).json({ success: false, error: 'Email and password are required.' });
+      return;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const admin = await prisma.admin.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!admin) {
+      res.status(401).json({ success: false, error: 'Invalid email or password.' });
+      return;
+    }
+
+    const passwordMatch = await bcrypt.compare(password, admin.passwordHash);
+    if (!passwordMatch) {
+      res.status(401).json({ success: false, error: 'Invalid email or password.' });
+      return;
+    }
+
+    const payload = {
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: admin.role,
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+
+    res.cookie('algox_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
+
+    console.log(`[AlgoX Auth] Admin ${admin.email} (${admin.role}) logged in successfully.`);
+
+    res.json({
+      success: true,
+      admin: payload,
+    });
+  } catch (error) {
+    console.error('Error during admin login:', error);
+    res.status(500).json({ success: false, error: 'Login failed due to a server error.' });
+  }
+});
+
+// Admin Logout
+app.post('/api/admin/logout', (_req, res) => {
+  res.clearCookie('algox_token');
+  res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+// Get Current Logged-in Admin Profile
+app.get('/api/admin/me', requireAdminAuth, (req: AuthenticatedRequest, res) => {
+  res.json({ success: true, admin: req.admin });
+});
+
+// Create New Admin / Committee Member Account (ADMIN role required)
+app.post('/api/admin/accounts', requireAdminAuth, requireAdminRole('ADMIN'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password) {
+      res.status(400).json({ success: false, error: 'Name, email, and password are required.' });
+      return;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanRole = role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
+
+    const existing = await prisma.admin.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (existing) {
+      res.status(409).json({ success: false, error: 'An account with this email address already exists.' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const newAdmin = await prisma.admin.create({
+      data: {
+        name: name.trim(),
+        email: cleanEmail,
+        passwordHash,
+        role: cleanRole,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    console.log(`[AlgoX Auth] New account created by ${req.admin?.email}: ${newAdmin.email} (${newAdmin.role})`);
+
+    res.json({ success: true, account: newAdmin });
+  } catch (error) {
+    console.error('Error creating admin account:', error);
+    res.status(500).json({ success: false, error: 'Failed to create account.' });
+  }
+});
+
+// List Admin Accounts (ADMIN role required)
+app.get('/api/admin/accounts', requireAdminAuth, requireAdminRole('ADMIN'), async (_req, res) => {
+  try {
+    const accounts = await prisma.admin.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({ success: true, accounts });
+  } catch (error) {
+    console.error('Error listing admin accounts:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch accounts.' });
+  }
+});
+
+// ==================== PROTECTED HR ADMIN CASE MANAGEMENT ENDPOINTS ====================
+
 // Task 4: HR Admin — List all cases (without revealing plaintext)
-app.get('/api/admin/cases', async (_req, res) => {
+app.get('/api/admin/cases', requireAdminAuth, async (_req, res) => {
   try {
     const cases = await prisma.case.findMany({
       orderBy: { createdAt: 'desc' },
@@ -246,7 +393,7 @@ app.get('/api/admin/cases', async (_req, res) => {
 });
 
 // HR Admin — Authorized On-Demand Complaint Decryption
-app.post('/api/admin/cases/decrypt', async (req, res) => {
+app.post('/api/admin/cases/decrypt', requireAdminAuth, async (req, res) => {
   try {
     const { caseId } = req.body;
 
@@ -306,7 +453,7 @@ app.post('/api/admin/cases/decrypt', async (req, res) => {
 
 // Task 7: HR Admin — Update status via Batched / Jittered Queue
 // Problem 5: Optionally attach an encrypted official status note/directive for the complainant
-app.post('/api/admin/cases/update-status', async (req, res) => {
+app.post('/api/admin/cases/update-status', requireAdminAuth, async (req, res) => {
   try {
     const { caseId, internalStatus, customPublicStatus, immediate, statusNote } = req.body;
 
@@ -354,7 +501,7 @@ app.post('/api/admin/cases/update-status', async (req, res) => {
 });
 
 // Task 7: HR Admin — List pending and recent batch queue items
-app.get('/api/admin/queue', async (_req, res) => {
+app.get('/api/admin/queue', requireAdminAuth, async (_req, res) => {
   try {
     const queue = await prisma.statusUpdateQueue.findMany({
       orderBy: { createdAt: 'desc' },
@@ -368,7 +515,7 @@ app.get('/api/admin/queue', async (_req, res) => {
 });
 
 // Task 7: HR Admin — Force flush / release all pending queued updates (Demo testing tool)
-app.post('/api/admin/queue/flush', async (_req, res) => {
+app.post('/api/admin/queue/flush', requireAdminAuth, async (_req, res) => {
   try {
     const pending = await prisma.statusUpdateQueue.findMany({
       where: { released: false },

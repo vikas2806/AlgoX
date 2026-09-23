@@ -88,10 +88,12 @@ PORT=3001
 ENCRYPTION_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 ```
 
-### 3. Initialize SQLite Database
+### 3. Initialize SQLite Database & Seed Admin Account
 ```bash
 npx prisma db push
+npm run db:seed
 ```
+*Creates the default bootstrap committee admin account (`admin@algox.internal` / `AdminPass123!`).*
 
 ### 4. Start Development Server
 ```bash
@@ -108,9 +110,11 @@ npm run dev
    - Click **Generate New Case ID** (e.g. `CASE-8M4K2P`) and copy it.
    - Click **Continue to Report Filing**, enter an incident report, and click **Submit Encrypted Report**.
    - Observe the confirmation showing ciphertext byte size and zero-plaintext storage.
-2. **HR Admin Portal**:
+2. **HR Committee Auth & Admin Portal**:
    - Switch to the **HR Admin Portal** tab in the top navigation.
+   - Sign in using committee credentials (`admin@algox.internal` / `AdminPass123!`).
    - View the encrypted case in the registry.
+   - Super Admins (`role === 'ADMIN'`) can switch to the **Committee Accounts** tab to provision new HR committee member credentials.
    - Select an internal investigation stage (e.g., `Witness Interviews Active`) and click **Commit Status Update**.
    - Notice the update entering the **Metadata Camouflage Batch Release Queue** with a random jitter delay countdown.
 3. **Metadata Camouflage & Network Inspector**:
@@ -122,3 +126,4 @@ npm run dev
    - In the **User Portal**, scroll to **Confidential Case Communications & Evidence**.
    - Submit additional incident dates, witness details, or supplementary evidence.
    - In the **Admin Portal**, view the encrypted thread under **Case Follow-Ups & Complainant Thread**, and post confidential inquiries back to the complainant. All messages are encrypted with AES-256-GCM before storage.
+

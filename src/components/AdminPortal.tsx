@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check, UnlockKeyhole, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, FileSearch, MessageSquare, Send } from 'lucide-react';
+import { ShieldAlert, RefreshCw, CheckCircle, Clock, FileLock2, ArrowRight, Zap, Shuffle, ListOrdered, Check, UnlockKeyhole, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, FileSearch, MessageSquare, Send, LogOut, Loader2 } from 'lucide-react';
 import { INTERNAL_STATUS_OPTIONS, mapInternalToPublic, PublicStatus } from '../lib/statusMapping';
+import { AdminLogin, AdminUser } from './AdminLogin';
+import { AccountManagement } from './AccountManagement';
 
 interface AdminCase {
   id: string;
@@ -39,6 +41,11 @@ interface CaseMessageItem {
 }
 
 export const AdminPortal = () => {
+  // Auth state
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [activeTab, setActiveTab] = useState<'cases' | 'accounts'>('cases');
+
   const [cases, setCases] = useState<AdminCase[]>([]);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +77,39 @@ export const AdminPortal = () => {
   // Problem 5: Official Status Update Note for Complainant
   const [statusNoteText, setStatusNoteText] = useState('');
 
+  // Check auth status on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      setCheckingAuth(true);
+      try {
+        const res = await fetch('/api/admin/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.admin) {
+            setAdminUser(data.admin);
+          }
+        }
+      } catch (err) {
+        console.error('Session check failed:', err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    checkSession();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setAdminUser(null);
+      setCases([]);
+      setQueue([]);
+    }
+  };
+
   const fetchCasesAndQueue = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -100,11 +140,12 @@ export const AdminPortal = () => {
   }, [selectedCaseId]);
 
   useEffect(() => {
+    if (!adminUser) return;
     fetchCasesAndQueue();
     // Poll queue status every 4 seconds
     const interval = setInterval(fetchCasesAndQueue, 4000);
     return () => clearInterval(interval);
-  }, [fetchCasesAndQueue]);
+  }, [adminUser, fetchCasesAndQueue]);
 
   const fetchCaseMessages = useCallback(async (caseId: string) => {
     setIsLoadingMessages(true);
@@ -273,6 +314,19 @@ export const AdminPortal = () => {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin mb-3 text-indigo-400" />
+        <p className="text-sm font-medium">Verifying committee credentials...</p>
+      </div>
+    );
+  }
+
+  if (!adminUser) {
+    return <AdminLogin onLoginSuccess={(user) => setAdminUser(user)} />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Top Banner */}
@@ -282,23 +336,68 @@ export const AdminPortal = () => {
             <ShieldAlert size={22} style={{ color: 'var(--accent-purple)' }} />
           </div>
           <div>
-            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>HR Admin Dashboard</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>ICC Committee Portal</h2>
+              <span className={`px-2 py-0.5 rounded text-xs font-mono font-bold ${
+                adminUser.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+              }`}>
+                {adminUser.role}
+              </span>
+            </div>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Review and manage confidential reports submitted by employees.
+              Signed in as <span className="text-slate-200 font-medium">{adminUser.name}</span> ({adminUser.email})
             </p>
           </div>
         </div>
 
-        <button
-          id="btn-admin-refresh"
-          onClick={fetchCasesAndQueue}
-          disabled={isLoading}
-          className="btn btn-secondary text-sm flex items-center gap-2 self-stretch md:self-auto"
-        >
-          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3 self-stretch md:self-auto">
+          {adminUser.role === 'ADMIN' && (
+            <div className="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setActiveTab('cases')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  activeTab === 'cases' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Case Review
+              </button>
+              <button
+                onClick={() => setActiveTab('accounts')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                  activeTab === 'accounts' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Committee Accounts
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'cases' && (
+            <button
+              id="btn-admin-refresh"
+              onClick={fetchCasesAndQueue}
+              disabled={isLoading}
+              className="btn btn-secondary text-sm flex items-center gap-2"
+            >
+              <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="btn text-sm flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20"
+          >
+            <LogOut size={15} />
+            Sign Out
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'accounts' ? (
+        <AccountManagement currentUser={adminUser} />
+      ) : (
+        <>
 
       {error && (
         <div className="error-banner">
@@ -817,6 +916,8 @@ export const AdminPortal = () => {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 };
