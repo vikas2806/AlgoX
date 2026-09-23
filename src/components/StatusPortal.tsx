@@ -19,25 +19,25 @@ const STATE_DESCRIPTIONS: Record<PublicStatus, { title: string; desc: string; ic
     title: 'Report Received',
     desc: 'We have your report. It has been saved securely.',
     icon: CheckCircle2,
-    color: 'text-blue-400 border-blue-500/40 bg-blue-500/10',
+    color: 'text-blue-700 dark:text-blue-300 border-blue-500/40 bg-blue-500/10',
   },
   'In Review': {
     title: 'Being Reviewed',
     desc: 'Your report is currently being looked into by the HR team.',
     icon: Clock,
-    color: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
+    color: 'text-amber-800 dark:text-amber-300 border-amber-500/40 bg-amber-500/10',
   },
   'Update Available': {
     title: 'Update Available',
     desc: 'There is new information about your report. Check the confidential messages below.',
     icon: BellRing,
-    color: 'text-purple-400 border-purple-500/40 bg-purple-500/10',
+    color: 'text-purple-800 dark:text-purple-300 border-purple-500/40 bg-purple-500/10',
   },
   Closed: {
     title: 'Case Closed',
     desc: 'The review process for this report has been completed.',
     icon: Check,
-    color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+    color: 'text-emerald-800 dark:text-emerald-300 border-emerald-500/40 bg-emerald-500/10',
   },
 };
 
@@ -173,12 +173,12 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
       <div className="card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="icon-badge accent-blue">
-            <ShieldCheck size={22} className="text-blue-400" />
+            <ShieldCheck size={22} style={{ color: 'var(--accent-blue)' }} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-100">My Report Status</h2>
-            <p className="text-sm text-gray-400 mt-0.5">
-              Report ID: <code className="text-blue-400 font-bold font-mono text-base">{caseId}</code>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>My Report Status</h2>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Report ID: <code style={{ color: 'var(--accent-blue)', fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '1rem' }}>{caseId}</code>
             </p>
           </div>
         </div>
@@ -193,7 +193,7 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
             disabled={isRefreshing}
             className="btn btn-secondary text-xs px-3.5 py-2 flex-1 md:flex-initial flex items-center justify-center gap-1.5"
           >
-            <RefreshCw size={14} className={isRefreshing ? 'animate-spin text-blue-400' : ''} />
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} style={isRefreshing ? { color: 'var(--accent-blue)' } : {}} />
             {isRefreshing ? 'Checking...' : 'Refresh Status'}
           </button>
           <button
@@ -218,7 +218,7 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         {/* Prominent Current Status Banner */}
         <div className={`p-6 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${currentConfig.color}`}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-black/20 border border-white/10 flex items-center justify-center shrink-0">
+            <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: 'rgba(0,0,0,0.12)', border: '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <CurrentIcon size={26} />
             </div>
             <div>
@@ -241,38 +241,38 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
           )}
         </div>
 
-        {/* Problem 5: Official Decrypted Status Note / Directive */}
+        {/* Official Status Note */}
         {officialStatusNote && (
-          <div className="bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-purple-950/40 border border-purple-500/40 rounded-2xl p-5 flex flex-col gap-3 shadow-lg shadow-purple-950/20">
-            <div className="flex items-center justify-between border-b border-purple-500/20 pb-2.5">
+          <div style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '1rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="flex items-center justify-between pb-2.5" style={{ borderBottom: '1px solid rgba(124,58,237,0.15)' }}>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center">
-                  <BellRing size={15} className="text-purple-300" />
+                <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '0.5rem', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BellRing size={15} style={{ color: 'var(--accent-purple)' }} />
                 </div>
-                <h4 className="text-sm font-bold text-purple-200">
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
                   Official Committee Update Notice
                 </h4>
               </div>
-              <span className="text-[11px] text-purple-300/80 font-mono flex items-center gap-1">
-                <Lock size={11} className="text-emerald-400" />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '0.25rem', opacity: 0.8 }}>
+                <Lock size={11} style={{ color: '#059669' }} />
                 Confidential AES-256 Directive
               </span>
             </div>
 
-            <div className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap bg-black/20 p-3.5 rounded-xl border border-white/5">
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: '1.6', whiteSpace: 'pre-wrap', background: 'rgba(0,0,0,0.04)', padding: '0.875rem', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
               {officialStatusNote}
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: 'var(--text-secondary)', paddingTop: '0.25rem' }}>
               <span>Attached directly by the Internal Complaints Committee (ICC).</span>
-              {statusNoteDate && <span className="font-mono text-purple-300/70">Issued: {statusNoteDate}</span>}
+              {statusNoteDate && <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)', opacity: 0.75 }}>Issued: {statusNoteDate}</span>}
             </div>
           </div>
         )}
 
         {/* Progress Steps */}
         <div className="flex flex-col gap-3 pt-2">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Progress
           </div>
 
@@ -285,33 +285,43 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
               return (
                 <div
                   key={state}
-                  className={`p-4 rounded-xl border flex flex-col gap-2 transition-all ${
-                    isCurrent
-                      ? 'bg-slate-900/90 border-blue-500/60 shadow-lg shadow-blue-950/40 ring-1 ring-blue-500/30'
-                      : isPast
-                      ? 'bg-slate-950/40 border-emerald-500/20 opacity-85'
-                      : 'bg-slate-950/20 border-white/5 opacity-40'
-                  }`}
+                  style={{
+                    padding: '1rem',
+                    borderRadius: '0.75rem',
+                    border: isCurrent ? '1px solid rgba(59,130,246,0.55)' : isPast ? '1px solid rgba(16,185,129,0.22)' : '1px solid var(--card-border)',
+                    background: isCurrent ? 'var(--bg-secondary)' : isPast ? 'var(--bg-tertiary)' : 'var(--tag-inactive)',
+                    opacity: isCurrent ? 1 : isPast ? 0.85 : 0.45,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isCurrent ? '0 4px 16px -4px rgba(59,130,246,0.2)' : 'none',
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ${
-                          isCurrent
-                            ? 'bg-blue-600 text-white'
-                            : isPast
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-800 text-gray-400'
-                        }`}
+                        style={{
+                          width: '1.5rem',
+                          height: '1.5rem',
+                          borderRadius: '50%',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: isCurrent ? '#2563eb' : isPast ? '#059669' : 'var(--bg-tertiary)',
+                          color: isCurrent || isPast ? '#ffffff' : 'var(--text-muted)',
+                        }}
                       >
                         {isPast ? <Check size={12} /> : idx + 1}
                       </div>
-                      <span className="text-sm font-bold text-gray-200">{STATE_DESCRIPTIONS[state].title}</span>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>{STATE_DESCRIPTIONS[state].title}</span>
                     </div>
-                    <StateIcon size={16} className={isCurrent ? 'text-blue-400' : isPast ? 'text-emerald-400' : 'text-gray-600'} />
+                    <StateIcon size={16} style={{ color: isCurrent ? 'var(--accent-blue)' : isPast ? '#059669' : 'var(--text-muted)' }} />
                   </div>
 
-                  <p className="text-[11px] text-gray-400 leading-normal">
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                     {STATE_DESCRIPTIONS[state].desc}
                   </p>
                 </div>
@@ -321,34 +331,34 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         </div>
 
         {/* Privacy note */}
-        <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 flex items-start gap-3 text-xs text-gray-400 leading-relaxed">
-          <ShieldCheck size={16} className="text-blue-400 shrink-0 mt-0.5" />
+        <div style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+          <ShieldCheck size={16} style={{ color: 'var(--accent-blue)', flexShrink: 0, marginTop: '0.125rem' }} />
           <div>
-            <strong className="text-gray-200">Your privacy is protected throughout this process.</strong>
+            <strong style={{ color: 'var(--text-primary)' }}>Your privacy is protected throughout this process.</strong>
             <br />
             To keep you safe, detailed internal investigation steps and member names are shielded. Status updates and secure follow-ups stay encrypted end-to-end.
           </div>
         </div>
       </div>
 
-      {/* ── Problem 6: Confidential Follow-Up & Evidence Thread ────────── */}
+      {/* Confidential Follow-Up & Evidence Thread */}
       <div className="card flex flex-col gap-5">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--divider)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
               <MessageSquare size={17} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-200">
+              <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Confidential Case Communications & Evidence
               </h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Direct, encrypted two-way channel with the Internal Complaints Committee (ICC)
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono text-gray-500 flex items-center gap-1">
-            <Lock size={12} className="text-emerald-400" />
+          <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <Lock size={12} style={{ color: '#059669' }} />
             AES-256 Encrypted
           </span>
         </div>
@@ -356,15 +366,15 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         {/* Messages List */}
         <div className="flex flex-col gap-3 min-h-[140px] max-h-[360px] overflow-y-auto pr-1">
           {isLoadingMessages ? (
-            <div className="py-8 text-center text-gray-500 text-xs flex items-center justify-center gap-2">
-              <RefreshCw size={14} className="animate-spin text-blue-400" />
+            <div className="py-8 text-center flex items-center justify-center gap-2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--accent-blue)' }} />
               Loading encrypted messages...
             </div>
           ) : messages.length === 0 ? (
-            <div className="py-8 text-center text-gray-500 text-xs flex flex-col items-center gap-2 bg-slate-950/40 rounded-xl border border-white/5 p-6">
-              <MessageSquare size={24} className="text-gray-600" />
-              <p className="text-gray-300 font-medium">No follow-up messages yet.</p>
-              <p className="text-gray-500 max-w-md">
+            <div className="py-8 text-center flex flex-col items-center gap-2 p-6" style={{ background: 'var(--bg-tertiary)', borderRadius: '0.75rem', border: '1px solid var(--card-border)', fontSize: '0.75rem' }}>
+              <MessageSquare size={24} style={{ color: 'var(--text-muted)' }} />
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No follow-up messages yet.</p>
+              <p style={{ color: 'var(--text-secondary)', maxWidth: '28rem' }}>
                 If you have additional dates, witness names, or clarifications, or if the ICC committee requests information, you can securely communicate below.
               </p>
             </div>
@@ -374,17 +384,24 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
               return (
                 <div
                   key={msg.id}
-                  className={`p-3.5 rounded-xl border flex flex-col gap-1.5 transition-all ${
-                    isComplainant
-                      ? 'bg-blue-950/20 border-blue-500/30 ml-4'
-                      : 'bg-purple-950/25 border-purple-500/35 mr-4'
-                  }`}
+                  style={{
+                    padding: '0.875rem',
+                    borderRadius: '0.75rem',
+                    border: `1px solid ${isComplainant ? 'rgba(59,130,246,0.25)' : 'rgba(124,58,237,0.28)'}`,
+                    background: isComplainant ? 'rgba(59,130,246,0.05)' : 'rgba(124,58,237,0.06)',
+                    marginLeft: isComplainant ? '1rem' : '0',
+                    marginRight: isComplainant ? '0' : '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.375rem',
+                    transition: 'all 0.15s ease',
+                  }}
                 >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className={`font-semibold flex items-center gap-1.5 ${isComplainant ? 'text-blue-400' : 'text-purple-300'}`}>
+                  <div className="flex items-center justify-between" style={{ fontSize: '0.75rem' }}>
+                    <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.375rem', color: isComplainant ? 'var(--accent-blue)' : 'var(--accent-purple)' }}>
                       {isComplainant ? 'You (Complainant)' : 'Internal Complaints Committee (ICC)'}
                     </span>
-                    <span className="text-[11px] text-gray-500 font-mono">
+                    <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {new Date(msg.createdAt).toLocaleString([], {
                         month: 'short',
                         day: 'numeric',
@@ -393,7 +410,7 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
                       })}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-200 leading-relaxed whitespace-pre-wrap">
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-primary)', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                     {msg.text}
                   </div>
                 </div>
@@ -403,9 +420,9 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         </div>
 
         {/* Follow-up Submission Form */}
-        <form onSubmit={handleSendFollowUp} className="flex flex-col gap-3 pt-2 border-t border-white/10">
+        <form onSubmit={handleSendFollowUp} className="flex flex-col gap-3 pt-2" style={{ borderTop: '1px solid var(--divider)' }}>
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
               Add Evidence / Clarification / Response to ICC
             </label>
             <textarea
@@ -420,22 +437,22 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
           </div>
 
           {messageError && (
-            <div className="flex items-center gap-2 text-xs bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg p-2.5">
-              <AlertCircle size={14} className="shrink-0" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626', borderRadius: '0.5rem', padding: '0.625rem' }}>
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
               {messageError}
             </div>
           )}
 
           {messageSuccessMsg && (
-            <div className="flex items-center gap-2 text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-lg p-2.5">
-              <CheckCircle2 size={14} className="shrink-0" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#059669', borderRadius: '0.5rem', padding: '0.625rem' }}>
+              <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
               {messageSuccessMsg}
             </div>
           )}
 
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-gray-500 flex items-center gap-1.5">
-              <Lock size={12} className="text-blue-400" />
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <Lock size={12} style={{ color: 'var(--accent-blue)' }} />
               Encrypted with AES-256 before leaving your browser.
             </span>
             <button

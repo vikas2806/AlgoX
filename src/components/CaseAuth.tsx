@@ -92,10 +92,10 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <div className="icon-badge accent-blue">
-            <Sparkles size={20} color="#60a5fa" />
+            <Sparkles size={20} style={{ color: 'var(--accent-blue)' }} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Make a New Report</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>Make a New Report</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               100% Anonymous · No personal info needed
             </p>
@@ -124,7 +124,7 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
                 Your Private Report ID
               </span>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                <code style={{ fontSize: '1.25rem', fontWeight: 700, color: '#93c5fd', letterSpacing: '0.05em' }}>
+                <code style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-blue)', letterSpacing: '0.05em', fontFamily: 'var(--font-mono)' }}>
                   {generatedId}
                 </code>
                 <button
@@ -133,15 +133,15 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
                   onClick={handleCopy}
                   style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
                 >
-                  {copied ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+                  {copied ? <Check size={14} style={{ color: '#059669' }} /> : <Copy size={14} />}
                   {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
             </div>
 
             <div className="warning-banner">
-              <AlertCircle size={16} color="#fbbf24" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <p style={{ fontSize: '0.8rem', color: '#fef3c7', lineHeight: '1.5' }}>
+              <AlertCircle size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: '1.5' }}>
                 <strong>Save this ID before continuing.</strong> You'll need it later to check updates on your report. We don't store your contact info.
               </p>
             </div>
@@ -163,10 +163,10 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <div className="icon-badge accent-purple">
-            <KeyRound size={20} color="#c084fc" />
+            <KeyRound size={20} style={{ color: 'var(--accent-purple)' }} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Check My Report</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>Check My Report</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
               View updates on an existing report
             </p>
@@ -195,7 +195,7 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
 
           {error && (
             <div className="error-banner">
-              <AlertCircle size={16} color="#f87171" style={{ flexShrink: 0 }} />
+              <AlertCircle size={16} style={{ color: '#dc2626', flexShrink: 0 }} />
               <span style={{ fontSize: '0.85rem' }}>{error}</span>
             </div>
           )}

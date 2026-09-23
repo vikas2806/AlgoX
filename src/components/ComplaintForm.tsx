@@ -74,12 +74,12 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
     <div className="card">
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <div className="icon-badge accent-blue">
-          <FileText size={20} color="#60a5fa" />
+          <FileText size={20} style={{ color: 'var(--accent-blue)' }} />
         </div>
         <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Submit Your Report</h2>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>Submit Your Report</h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Linked to Report ID: <code style={{ color: '#93c5fd' }}>{caseId}</code>
+            Linked to Report ID: <code style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{caseId}</code>
           </p>
         </div>
       </div>
@@ -106,25 +106,25 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <ShieldAlert size={32} color="#fbbf24" />
+            <ShieldAlert size={32} style={{ color: '#d97706' }} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#f3f4f6' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Complaint Already Filed
             </h3>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: '1.55' }}>
               A complaint is already securely on file for{' '}
-              <code style={{ color: '#fcd34d' }}>{caseId}</code>. To protect the integrity
+              <code style={{ color: '#d97706', fontFamily: 'var(--font-mono)' }}>{caseId}</code>. To protect the integrity
               of your case, duplicate submissions are blocked. Use your Case ID to check
               your current status.
             </p>
           </div>
           <div style={{
-            background: 'rgba(0,0,0,0.2)',
+            background: 'var(--bg-tertiary)',
             borderRadius: '8px',
             padding: '0.65rem 1rem',
             fontSize: '0.78rem',
-            color: '#9ca3af',
+            color: 'var(--text-secondary)',
             lineHeight: '1.5',
           }}>
             If you believe this is an error, your case is still safe — no data was overwritten.
@@ -152,17 +152,17 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <CheckCircle2 size={32} color="#34d399" />
+            <CheckCircle2 size={32} style={{ color: '#059669' }} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f3f4f6' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Report Submitted Successfully
             </h3>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
               Your report has been securely saved. Your identity remains completely private.
             </p>
           </div>
-          <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Taking you to your report status...
           </div>
         </div>
@@ -181,7 +181,7 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
               style={{ cursor: 'pointer' }}
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat} style={{ background: '#111827', color: '#f3f4f6' }}>
+                <option key={cat} value={cat}>
                   {cat}
                 </option>
               ))}
@@ -206,8 +206,8 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
 
           {/* Privacy assurance notice */}
           <div style={{
-            background: 'rgba(15, 23, 42, 0.6)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
+            background: 'var(--bg-tertiary)',
+            border: '1px solid var(--card-border)',
             borderRadius: '10px',
             padding: '1rem',
             display: 'flex',
@@ -224,10 +224,10 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
               justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <ShieldCheck size={16} color="#60a5fa" />
+              <ShieldCheck size={16} style={{ color: 'var(--accent-blue)' }} />
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-              <strong style={{ color: '#e5e7eb' }}>Your privacy is protected.</strong>
+              <strong style={{ color: 'var(--text-primary)' }}>Your privacy is protected.</strong>
               <br />
               Your report is securely encrypted before being stored. No one can read it except authorized HR personnel. Your name and identity are never recorded.
             </div>
@@ -235,7 +235,7 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
 
           {error && (
             <div className="error-banner">
-              <AlertCircle size={16} color="#f87171" style={{ flexShrink: 0 }} />
+              <AlertCircle size={16} style={{ color: '#dc2626', flexShrink: 0 }} />
               <span style={{ fontSize: '0.85rem' }}>{error}</span>
             </div>
           )}

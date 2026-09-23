@@ -261,15 +261,15 @@ export const AdminPortal = () => {
   const getPublicStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'Received':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+        return 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold';
       case 'In Review':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        return 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30 font-bold';
       case 'Update Available':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+        return 'bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-500/30 font-bold';
       case 'Closed':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        return 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 font-bold';
       default:
-        return 'bg-gray-500/10 text-gray-400 border-gray-500/30';
+        return 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/30 font-bold';
     }
   };
 
@@ -279,11 +279,11 @@ export const AdminPortal = () => {
       <div className="card flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="icon-badge accent-purple">
-            <ShieldAlert size={22} className="text-purple-400" />
+            <ShieldAlert size={22} style={{ color: 'var(--accent-purple)' }} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-100">HR Admin Dashboard</h2>
-            <p className="text-sm text-gray-400">
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>HR Admin Dashboard</h2>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Review and manage confidential reports submitted by employees.
             </p>
           </div>
@@ -310,19 +310,19 @@ export const AdminPortal = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Cases Table/List */}
         <div className="lg:col-span-7 card flex flex-col gap-4">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <h3 className="text-base font-semibold text-gray-200 flex items-center gap-2">
-              <FileLock2 size={18} className="text-blue-400" />
+          <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--divider)' }}>
+            <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <FileLock2 size={18} style={{ color: 'var(--accent-blue)' }} />
               All Reports ({cases.length})
             </h3>
-            <span className="text-xs text-gray-500">Synced</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Synced</span>
           </div>
 
           {cases.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 flex flex-col items-center gap-2">
-              <Clock size={28} className="text-gray-600" />
+            <div className="py-12 text-center flex flex-col items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+              <Clock size={28} style={{ color: 'var(--text-muted)' }} />
               <p>No reports submitted yet.</p>
-              <p className="text-xs text-gray-500">Reports from employees will appear here once submitted.</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Reports from employees will appear here once submitted.</p>
             </div>
           ) : (
             <div className="flex flex-col gap-2 max-h-[480px] overflow-y-auto pr-1">
@@ -332,21 +332,27 @@ export const AdminPortal = () => {
                   <div
                     key={c.caseId}
                     onClick={() => handleCaseSelect(c)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                      isSelected
-                        ? 'bg-blue-950/40 border-blue-500/50 shadow-md shadow-blue-950/50'
-                        : 'bg-slate-900/50 border-white/5 hover:border-white/20'
-                    }`}
+                    style={{
+                      padding: '0.875rem',
+                      borderRadius: '0.75rem',
+                      border: isSelected ? '1px solid rgba(59,130,246,0.5)' : '1px solid var(--card-border)',
+                      background: isSelected ? 'rgba(59,130,246,0.07)' : 'var(--tag-inactive)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                    }}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <code className="text-sm font-bold text-blue-300 font-mono">{c.caseId}</code>
-                        <span className="text-xs text-gray-500">
+                        <code style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{c.caseId}</code>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-400 mt-1 flex items-center gap-2">
-                        <span>Stage: <strong className="text-gray-300">{c.internalStatus}</strong></span>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                        <span>Stage: <strong style={{ color: 'var(--text-primary)' }}>{c.internalStatus}</strong></span>
                       </div>
                     </div>
 
@@ -364,21 +370,21 @@ export const AdminPortal = () => {
 
         {/* Case Status Manager Panel */}
         <div className="lg:col-span-5 card flex flex-col gap-4">
-          <div className="border-b border-white/10 pb-3">
-            <h3 className="text-base font-semibold text-gray-200">
+          <div className="pb-3" style={{ borderBottom: '1px solid var(--divider)' }}>
+            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
               Update Report Status
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               Change the status visible to the reporter
             </p>
           </div>
 
           {selectedCase ? (
             <form onSubmit={handleUpdateStatus} className="flex flex-col gap-4">
-              <div className="bg-slate-900/80 p-3.5 rounded-xl border border-white/10">
-                <div className="text-xs text-gray-400 uppercase font-semibold">Selected Case</div>
-                <div className="text-lg font-mono font-bold text-blue-400 mt-0.5">{selectedCase.caseId}</div>
-                <div className="text-xs text-gray-400 mt-1">
+              <div style={{ background: 'var(--bg-tertiary)', padding: '0.875rem', borderRadius: '0.75rem', border: '1px solid var(--card-border)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Selected Case</div>
+                <div style={{ fontSize: '1.125rem', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--accent-blue)', marginTop: '0.125rem' }}>{selectedCase.caseId}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                   Current Public Status:{' '}
                   <span className={`font-semibold px-2 py-0.5 rounded-full border text-[11px] ${getPublicStatusBadgeColor(selectedCase.publicStatus)}`}>
                     {selectedCase.publicStatus}
@@ -387,7 +393,7 @@ export const AdminPortal = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.375rem' }}>
                   Investigation Stage
                 </label>
                 <select
@@ -397,7 +403,7 @@ export const AdminPortal = () => {
                   onChange={(e) => setNewInternalStatus(e.target.value)}
                 >
                   {INTERNAL_STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-slate-900 text-gray-200">
+                    <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
                   ))}
@@ -405,24 +411,24 @@ export const AdminPortal = () => {
               </div>
 
               {/* Status Preview */}
-              <div className="bg-slate-900/60 border border-white/10 rounded-xl p-3 flex flex-col gap-2">
-                <div className="text-xs font-semibold text-gray-400 uppercase">Reporter Will See</div>
+              <div style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Reporter Will See</div>
                 <div className="flex items-center gap-2 text-xs">
-                  <ArrowRight size={13} className="text-gray-500" />
+                  <ArrowRight size={13} style={{ color: 'var(--text-muted)' }} />
                   <span className={`font-semibold px-2.5 py-1 rounded-full border ${getPublicStatusBadgeColor(previewPublicStatus)}`}>
                     {previewPublicStatus}
                   </span>
                 </div>
               </div>
 
-              {/* Problem 5: Official Status Note / Directive for Complainant */}
+              {/* Official Status Note */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-gray-400 uppercase flex items-center gap-1.5">
-                    <Lock size={12} className="text-purple-400" />
+                  <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <Lock size={12} style={{ color: 'var(--accent-purple)' }} />
                     Official Status Note / Directive
                   </label>
-                  <span className="text-[10px] text-gray-500 font-mono">AES-256 Encrypted</span>
+                  <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>AES-256 Encrypted</span>
                 </div>
                 <textarea
                   id="textarea-status-note"
@@ -437,27 +443,27 @@ export const AdminPortal = () => {
                   onChange={(e) => setStatusNoteText(e.target.value)}
                 />
                 {previewPublicStatus === 'Update Available' && !statusNoteText && (
-                  <p className="text-[11px] text-purple-300/80 flex items-center gap-1">
+                  <p style={{ fontSize: '0.6875rem', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     💡 Recommended: Attach an official notice so the complainant understands what update is available.
                   </p>
                 )}
               </div>
 
               {/* Delayed Release Toggle */}
-              <div className="bg-cyan-950/20 border border-cyan-500/30 rounded-xl p-3 flex flex-col gap-2">
-                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-cyan-300">
+              <div style={{ background: 'rgba(6,182,212,0.06)', border: '1px solid rgba(6,182,212,0.25)', borderRadius: '0.75rem', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, color: '#0891b2' }}>
                   <input
                     type="checkbox"
                     checked={useBatchQueue}
                     onChange={(e) => setUseBatchQueue(e.target.checked)}
-                    className="w-4 h-4 rounded text-cyan-500 bg-slate-900 border-white/20 focus:ring-cyan-500"
+                    className="w-4 h-4 rounded"
                   />
                   <span className="flex items-center gap-1.5">
-                    <Shuffle size={14} className="text-cyan-400" />
+                    <Shuffle size={14} style={{ color: '#06b6d4' }} />
                     Delay status update for extra privacy
                   </span>
                 </label>
-                <p className="text-[11px] text-gray-400 leading-normal pl-6">
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', lineHeight: '1.5', paddingLeft: '1.5rem' }}>
                   {useBatchQueue
                     ? 'The status update will be released after a short delay to protect privacy.'
                     : 'Status update will apply immediately (for testing only).'}
@@ -465,16 +471,22 @@ export const AdminPortal = () => {
               </div>
 
               {updateFeedback && (
-                <div className={`border rounded-xl p-3 flex items-start gap-2 text-xs ${
-                  updateFeedback.isQueued
-                    ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
-                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                }`}>
-                  <CheckCircle size={16} className="shrink-0 mt-0.5" />
+                <div style={{
+                  border: `1px solid ${updateFeedback.isQueued ? 'rgba(6,182,212,0.3)' : 'rgba(16,185,129,0.3)'}`,
+                  borderRadius: '0.75rem',
+                  padding: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                  fontSize: '0.75rem',
+                  color: updateFeedback.isQueued ? '#0891b2' : '#059669',
+                  background: updateFeedback.isQueued ? 'rgba(6,182,212,0.06)' : 'rgba(16,185,129,0.06)',
+                }}>
+                  <CheckCircle size={16} style={{ flexShrink: 0, marginTop: '0.125rem' }} />
                   <div>
                     <div>{updateFeedback.isQueued ? `Status saved. Will be visible to reporter shortly.` : `Status updated successfully.`}</div>
                     {updateFeedback.delaySec && (
-                      <div className="text-[11px] text-gray-400 mt-1">
+                      <div style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                         Estimated delay: ~{updateFeedback.delaySec} seconds
                       </div>
                     )}
@@ -492,7 +504,7 @@ export const AdminPortal = () => {
               </button>
             </form>
           ) : (
-            <div className="py-8 text-center text-gray-400 text-sm">
+            <div className="py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               Select a report from the list to update its status.
             </div>
           )}
@@ -502,18 +514,18 @@ export const AdminPortal = () => {
       {/* Decrypted Report Viewer */}
       {selectedCase && (
         <div className="card flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3" style={{ borderBottom: '1px solid var(--divider)' }}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
                 <FileSearch size={16} />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-200">
+                <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                   View Report Details
                 </h3>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   Report ID:{' '}
-                  <code className="text-amber-300 font-mono">{selectedCaseId}</code>
+                  <code style={{ color: '#d97706', fontFamily: 'var(--font-mono)' }}>{selectedCaseId}</code>
                 </p>
               </div>
             </div>
@@ -524,7 +536,7 @@ export const AdminPortal = () => {
                   onClick={() => { setDecryptedReport(null); setReportVisible(false); setDecryptError(null); }}
                   className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
                 >
-                  <Lock size={13} className="text-red-400" />
+                  <Lock size={13} style={{ color: '#dc2626' }} />
                   Close Report
                 </button>
               )}
@@ -533,7 +545,7 @@ export const AdminPortal = () => {
                 onClick={handleDecrypt}
                 disabled={isDecrypting}
                 className="btn btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
-                style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.2))', borderColor: 'rgba(245,158,11,0.4)', color: '#fcd34d' }}
+                style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(217,119,6,0.2))', borderColor: 'rgba(245,158,11,0.4)', color: '#d97706' }}
               >
                 <UnlockKeyhole size={13} />
                 {isDecrypting ? 'Opening report...' : 'Open Report'}
@@ -541,110 +553,102 @@ export const AdminPortal = () => {
             </div>
           </div>
 
-          {/* Decrypt Error */}
           {decryptError && (
-            <div className="flex items-center gap-2 text-xs bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl p-3">
-              <AlertCircle size={15} className="shrink-0" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626', borderRadius: '0.75rem', padding: '0.75rem' }}>
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
               {decryptError}
             </div>
           )}
 
-          {/* Decrypted Content */}
           {decryptedReport && reportVisible ? (
             <div className="flex flex-col gap-3">
-              {/* Security Badge Row */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.6875rem', fontWeight: 600, padding: '0.25rem 0.625rem', borderRadius: '9999px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#059669' }}>
                   <ShieldCheck size={12} />
                   Securely Verified
                 </span>
-                <span className="ml-auto text-[11px] text-gray-500">
+                <span style={{ marginLeft: 'auto', fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
                   Opened at {new Date(decryptedReport.decryptedAt).toLocaleTimeString()}
                 </span>
               </div>
 
-              {/* Meta Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-slate-900/80 border border-white/10 rounded-xl p-3.5">
-                  <div className="text-[10px] uppercase font-semibold text-gray-500 mb-1">Incident Category</div>
-                  <div className="text-sm font-semibold text-amber-300">{decryptedReport.category}</div>
+                <div style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '0.875rem' }}>
+                  <div style={{ fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Incident Category</div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#d97706' }}>{decryptedReport.category}</div>
                 </div>
-                <div className="bg-slate-900/80 border border-white/10 rounded-xl p-3.5">
-                  <div className="text-[10px] uppercase font-semibold text-gray-500 mb-1">Submitted At</div>
-                  <div className="text-sm font-mono text-gray-300">
+                <div style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '0.875rem' }}>
+                  <div style={{ fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Submitted At</div>
+                  <div style={{ fontSize: '0.875rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
                     {new Date(decryptedReport.submittedAt).toLocaleString()}
                   </div>
                 </div>
               </div>
 
-              {/* Complaint Text Viewer */}
-              <div className="bg-slate-950/80 border border-amber-500/20 rounded-xl p-4 flex flex-col gap-2">
+              <div style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '0.75rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div className="flex items-center justify-between">
-                  <div className="text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1.5">
+                  <div style={{ fontSize: '0.625rem', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                     <Eye size={11} />
                     What the employee reported
                   </div>
                   <button
                     onClick={() => setReportVisible(v => !v)}
-                    className="text-[10px] text-gray-500 hover:text-gray-300 flex items-center gap-1 transition-colors"
+                    style={{ fontSize: '0.625rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                   >
                     <EyeOff size={11} />
                     Hide
                   </button>
                 </div>
                 <div
-                  className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap"
-                  style={{ fontFamily: 'var(--font-sans)', maxHeight: '280px', overflowY: 'auto' }}
+                  style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'var(--font-sans)', maxHeight: '280px', overflowY: 'auto' }}
                 >
                   {decryptedReport.complaintText}
                 </div>
               </div>
 
-              {/* Security Warning */}
-              <div className="flex items-start gap-2 text-[11px] text-amber-400/70 bg-amber-500/5 border border-amber-500/15 rounded-xl p-3">
-                <AlertCircle size={13} className="shrink-0 mt-0.5" />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.6875rem', color: 'rgba(217,119,6,0.8)', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '0.75rem', padding: '0.75rem' }}>
+                <AlertCircle size={13} style={{ flexShrink: 0, marginTop: '0.125rem' }} />
                 <span>
                   This report is only visible in your browser. Click <strong>"Close Report"</strong> when you're done reviewing it.
                 </span>
               </div>
             </div>
           ) : !decryptedReport ? (
-            <div className="py-8 text-center flex flex-col items-center gap-2 text-gray-500">
-              <Lock size={28} className="text-gray-700" />
+            <div className="py-8 text-center flex flex-col items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+              <Lock size={28} style={{ color: 'var(--text-muted)' }} />
               <p className="text-sm">This report is securely stored.</p>
-              <p className="text-xs">Click <strong className="text-amber-400">"Open Report"</strong> to read the details.</p>
+              <p className="text-xs">Click <strong style={{ color: '#d97706' }}>"Open Report"</strong> to read the details.</p>
             </div>
           ) : (
-            <div className="py-6 text-center flex flex-col items-center gap-2 text-gray-500">
-              <EyeOff size={24} className="text-gray-700" />
-              <p className="text-xs">Report is hidden. Click <strong className="text-gray-300">"Open Report"</strong> again to view it.</p>
+            <div className="py-6 text-center flex flex-col items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+              <EyeOff size={24} style={{ color: 'var(--text-muted)' }} />
+              <p className="text-xs">Report is hidden. Click <strong style={{ color: 'var(--text-secondary)' }}>"Open Report"</strong> again to view it.</p>
             </div>
           )}
 
-          {/* ── Problem 6: Confidential Follow-Up & Complainant Messages ── */}
-          <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-3">
+          {/* Follow-Up & Complainant Messages */}
+          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--divider)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MessageSquare size={16} className="text-purple-400" />
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-300">
+                <MessageSquare size={16} style={{ color: 'var(--accent-purple)' }} />
+                <h4 style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)' }}>
                   Case Follow-Ups & Complainant Thread ({caseMessages.length})
                 </h4>
               </div>
-              <span className="text-[11px] text-gray-500 font-mono flex items-center gap-1">
-                <Lock size={11} className="text-emerald-400" />
+              <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Lock size={11} style={{ color: '#059669' }} />
                 End-to-End Encrypted
               </span>
             </div>
 
-            {/* Messages list */}
             <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
               {isLoadingMessages ? (
-                <div className="py-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
-                  <RefreshCw size={13} className="animate-spin text-purple-400" />
+                <div className="py-4 text-center flex items-center justify-center gap-2" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <RefreshCw size={13} className="animate-spin" style={{ color: 'var(--accent-purple)' }} />
                   Loading communications...
                 </div>
               ) : caseMessages.length === 0 ? (
-                <div className="py-4 text-center text-xs text-gray-500 bg-slate-900/40 rounded-lg p-3">
+                <div style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--tag-inactive)', borderRadius: '0.5rem' }}>
                   No follow-up messages or inquiries yet for this case.
                 </div>
               ) : (
@@ -653,21 +657,28 @@ export const AdminPortal = () => {
                   return (
                     <div
                       key={msg.id}
-                      className={`p-2.5 rounded-lg border text-xs flex flex-col gap-1 ${
-                        isICC
-                          ? 'bg-purple-950/20 border-purple-500/30 ml-3'
-                          : 'bg-blue-950/25 border-blue-500/30 mr-3'
-                      }`}
+                      style={{
+                        padding: '0.625rem',
+                        borderRadius: '0.5rem',
+                        border: `1px solid ${isICC ? 'rgba(124,58,237,0.25)' : 'rgba(59,130,246,0.25)'}`,
+                        background: isICC ? 'rgba(124,58,237,0.06)' : 'rgba(59,130,246,0.06)',
+                        marginLeft: isICC ? '0.75rem' : '0',
+                        marginRight: isICC ? '0' : '0.75rem',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.25rem',
+                      }}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`font-semibold ${isICC ? 'text-purple-300' : 'text-blue-300'}`}>
+                        <span style={{ fontWeight: 600, color: isICC ? 'var(--accent-purple)' : 'var(--accent-blue)' }}>
                           {isICC ? 'ICC Committee' : 'Complainant (Follow-Up)'}
                         </span>
-                        <span className="text-[10px] text-gray-500 font-mono">
+                        <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <div className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                      <div style={{ color: 'var(--text-primary)', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                         {msg.text}
                       </div>
                     </div>
@@ -676,7 +687,6 @@ export const AdminPortal = () => {
               )}
             </div>
 
-            {/* ICC Response Form */}
             <form onSubmit={handleSendAdminMessage} className="flex flex-col gap-2 mt-1">
               <textarea
                 className="input-field text-xs"
@@ -687,14 +697,14 @@ export const AdminPortal = () => {
               />
 
               {adminMsgError && (
-                <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded p-2 flex items-center gap-1.5">
+                <div style={{ fontSize: '0.75rem', color: '#dc2626', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: '0.25rem', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <AlertCircle size={13} />
                   {adminMsgError}
                 </div>
               )}
 
               {adminMsgSuccess && (
-                <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded p-2 flex items-center gap-1.5">
+                <div style={{ fontSize: '0.75rem', color: '#059669', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '0.25rem', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <CheckCircle size={13} />
                   {adminMsgSuccess}
                 </div>
@@ -726,16 +736,16 @@ export const AdminPortal = () => {
 
       {/* Pending Updates Queue */}
       <div className="card flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3" style={{ borderBottom: '1px solid var(--divider)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0891b2' }}>
               <ListOrdered size={16} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-200">
+              <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Pending Status Updates
               </h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Updates waiting to be sent to reporters
               </p>
             </div>
@@ -747,13 +757,13 @@ export const AdminPortal = () => {
             disabled={isFlushing || queue.filter((q) => !q.released).length === 0}
             className="btn btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 self-start sm:self-auto"
           >
-            <Zap size={13} className="text-amber-400" />
+            <Zap size={13} style={{ color: 'var(--accent-amber)' }} />
             {isFlushing ? 'Sending...' : 'Send All Now'}
           </button>
         </div>
 
         {queue.length === 0 ? (
-          <div className="py-6 text-center text-gray-500 text-xs">
+          <div className="py-6 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
             No pending updates. All reporters are up to date.
           </div>
         ) : (
@@ -764,35 +774,42 @@ export const AdminPortal = () => {
               return (
                 <div
                   key={item.id}
-                  className={`p-3 rounded-xl border flex flex-col gap-1.5 text-xs font-mono ${
-                    item.released
-                      ? 'bg-slate-900/40 border-white/5 opacity-70'
-                      : 'bg-cyan-950/30 border-cyan-500/40 shadow-sm shadow-cyan-950/40 ring-1 ring-cyan-500/20'
-                  }`}
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: '0.75rem',
+                    border: item.released ? '1px solid var(--card-border)' : '1px solid rgba(6,182,212,0.35)',
+                    background: item.released ? 'var(--tag-inactive)' : 'rgba(6,182,212,0.05)',
+                    opacity: item.released ? 0.7 : 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.375rem',
+                    fontSize: '0.75rem',
+                    fontFamily: 'var(--font-mono)',
+                  }}
                 >
                   <div className="flex items-center justify-between">
-                    <code className="font-bold text-blue-300">{item.caseId}</code>
+                    <code style={{ fontWeight: 700, color: 'var(--accent-blue)' }}>{item.caseId}</code>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                         item.released
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
                           : isPending
-                          ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30 animate-pulse'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                          ? 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30 animate-pulse'
+                          : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
                       }`}
                     >
                       {item.released ? 'SENT' : isPending ? 'PENDING' : 'SENDING'}
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-gray-300 flex items-center gap-1">
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <span>Target:</span>
-                    <strong className="text-white">{item.targetStatus}</strong>
+                    <strong style={{ color: 'var(--text-primary)' }}>{item.targetStatus}</strong>
                   </div>
 
-                  <div className="text-[10px] text-gray-500 flex items-center justify-between pt-1 border-t border-white/5">
+                  <div style={{ fontSize: '0.625rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.25rem', borderTop: '1px solid var(--divider)' }}>
                     <span>Scheduled: {new Date(item.scheduledReleaseAt).toLocaleTimeString()}</span>
-                    {item.released && <Check size={12} className="text-emerald-400" />}
+                    {item.released && <Check size={12} style={{ color: '#059669' }} />}
                   </div>
                 </div>
               );
