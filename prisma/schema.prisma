@@ -54,3 +54,13 @@ model CaseMessage {
 
   case             Case     @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
 }
+
+model Admin {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("MEMBER") // "ADMIN" | "MEMBER"
+  createdAt    DateTime @default(now())
+}
+
