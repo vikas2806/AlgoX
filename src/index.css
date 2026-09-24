@@ -38,6 +38,7 @@ body {
   font-family: var(--font-sans);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code, pre {
@@ -59,7 +60,7 @@ code, pre {
   border-radius: 16px;
   padding: 1.75rem;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.3s ease;
 }
 
 .card:hover {
@@ -160,7 +161,7 @@ code, pre {
   font-family: var(--font-mono);
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, background 0.3s ease;
 }
 
 .input-field:focus {
@@ -176,6 +177,64 @@ code, pre {
   padding: 0.85rem 1rem;
 }
 
+/* Status Banners */
+.status-banner-received {
+  color: #60a5fa; /* blue-400 */
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+.status-banner-review {
+  color: #fbbf24; /* amber-400 */
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.status-banner-update {
+  color: #c084fc; /* purple-400 */
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+.status-banner-closed {
+  color: #34d399; /* emerald-400 */
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Status Portal Backgrounds */
+.progress-step-current {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.6);
+  box-shadow: 0 10px 15px -3px rgba(23, 37, 84, 0.4);
+}
+.progress-step-past {
+  background: rgba(2, 6, 23, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  opacity: 0.85;
+}
+.progress-step-future {
+  background: rgba(2, 6, 23, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  opacity: 0.4;
+}
+.privacy-box {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step-number-future {
+  background: rgba(30, 41, 59, 0.8); /* slate-800 */
+  color: #9ca3af; /* gray-400 */
+}
+
+/* Messages */
+.msg-complainant {
+  background: rgba(23, 37, 84, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.msg-icc {
+  background: rgba(59, 7, 100, 0.25);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
 .warning-banner {
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.25);
@@ -184,6 +243,7 @@ code, pre {
   display: flex;
   gap: 0.6rem;
   align-items: flex-start;
+  color: #fde68a; /* Light yellow for dark mode */
 }
 
 .error-banner {
@@ -208,4 +268,137 @@ code, pre {
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
   color: #93c5fd;
+}
+
+/* ═══════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   Applied when the <html> element has class="light"
+   ═══════════════════════════════════════════════════ */
+
+html.light {
+  --bg-primary: #f0f4f8;
+  --bg-secondary: #e2e8f0;
+  --bg-tertiary: #cbd5e1;
+  --card-bg: rgba(255, 255, 255, 0.88);
+  --card-border: rgba(0, 0, 0, 0.1);
+  --card-hover-border: rgba(99, 102, 241, 0.4);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+}
+
+html.light body {
+  background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+  color: var(--text-primary);
+}
+
+html.light .card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.1);
+}
+
+html.light .btn-secondary {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.14);
+  color: var(--text-primary);
+}
+
+html.light .btn-secondary:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+html.light .input-field {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: var(--text-primary);
+}
+
+html.light .input-field option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+html.light .id-box {
+  background: rgba(240, 249, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+html.light .warning-banner {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #b45309; /* Dark amber for light mode */
+}
+
+html.light .error-banner {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: #be123c;
+}
+
+html.light .pillar-tag {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #1d4ed8;
+}
+
+html.light .progress-step-current {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+html.light .progress-step-past {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+html.light .progress-step-future {
+  background: rgba(241, 245, 249, 0.5);
+  border-color: rgba(0, 0, 0, 0.05);
+  opacity: 0.8; /* Slightly more opaque in light mode for readability */
+}
+
+html.light .privacy-box {
+  background: rgba(241, 245, 249, 0.8);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+html.light .step-number-future {
+  background: #cbd5e1; /* slate-300 */
+  color: #64748b; /* slate-500 */
+}
+
+html.light .msg-complainant {
+  background: rgba(239, 246, 255, 0.8);
+  border-color: rgba(191, 219, 254, 0.8);
+}
+html.light .msg-icc {
+  background: rgba(250, 245, 255, 0.8);
+  border-color: rgba(233, 213, 255, 0.8);
+}
+
+html.light .status-banner-received {
+  color: #2563eb; /* blue-600 */
+  background: rgba(219, 234, 254, 0.6); /* blue-100 */
+  border-color: rgba(147, 197, 253, 0.8); /* blue-300 */
+}
+html.light .status-banner-review {
+  color: #d97706; /* amber-600 */
+  background: rgba(254, 243, 199, 0.6); /* amber-100 */
+  border-color: rgba(252, 211, 77, 0.8); /* amber-300 */
+}
+html.light .status-banner-update {
+  color: #9333ea; /* purple-600 */
+  background: rgba(243, 232, 255, 0.6); /* purple-100 */
+  border-color: rgba(216, 180, 254, 0.8); /* purple-300 */
+}
+html.light .status-banner-closed {
+  color: #059669; /* emerald-600 */
+  background: rgba(209, 250, 229, 0.6); /* emerald-100 */
+  border-color: rgba(110, 231, 183, 0.8); /* emerald-300 */
 }

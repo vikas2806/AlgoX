@@ -124,7 +124,7 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
                 Your Private Report ID
               </span>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                <code style={{ fontSize: '1.25rem', fontWeight: 700, color: '#93c5fd', letterSpacing: '0.05em' }}>
+                <code style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-blue)', letterSpacing: '0.05em' }}>
                   {generatedId}
                 </code>
                 <button
@@ -140,8 +140,8 @@ export const CaseAuth = ({ onLogin }: CaseAuthProps) => {
             </div>
 
             <div className="warning-banner">
-              <AlertCircle size={16} color="#fbbf24" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <p style={{ fontSize: '0.8rem', color: '#fef3c7', lineHeight: '1.5' }}>
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ fontSize: '0.8rem', lineHeight: '1.5' }}>
                 <strong>Save this ID before continuing.</strong> You'll need it later to check updates on your report. We don't store your contact info.
               </p>
             </div>

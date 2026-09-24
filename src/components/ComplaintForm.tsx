@@ -205,11 +205,7 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
           </div>
 
           {/* Privacy assurance notice */}
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.6)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '10px',
-            padding: '1rem',
+          <div className="id-box" style={{
             display: 'flex',
             gap: '0.85rem',
             alignItems: 'flex-start',
@@ -224,10 +220,10 @@ export const ComplaintForm = ({ caseId, onSuccess }: ComplaintFormProps) => {
               justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <ShieldCheck size={16} color="#60a5fa" />
+              <ShieldCheck size={16} color="var(--accent-blue)" />
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-              <strong style={{ color: '#e5e7eb' }}>Your privacy is protected.</strong>
+              <strong style={{ color: 'var(--text-primary)' }}>Your privacy is protected.</strong>
               <br />
               Your report is securely encrypted before being stored. No one can read it except authorized HR personnel. Your name and identity are never recorded.
             </div>

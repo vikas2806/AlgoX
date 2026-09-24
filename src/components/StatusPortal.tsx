@@ -19,25 +19,25 @@ const STATE_DESCRIPTIONS: Record<PublicStatus, { title: string; desc: string; ic
     title: 'Report Received',
     desc: 'We have your report. It has been saved securely.',
     icon: CheckCircle2,
-    color: 'text-blue-400 border-blue-500/40 bg-blue-500/10',
+    color: 'status-banner-received',
   },
   'In Review': {
     title: 'Being Reviewed',
     desc: 'Your report is currently being looked into by the HR team.',
     icon: Clock,
-    color: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
+    color: 'status-banner-review',
   },
   'Update Available': {
     title: 'Update Available',
     desc: 'There is new information about your report. Check the confidential messages below.',
     icon: BellRing,
-    color: 'text-purple-400 border-purple-500/40 bg-purple-500/10',
+    color: 'status-banner-update',
   },
   Closed: {
     title: 'Case Closed',
     desc: 'The review process for this report has been completed.',
     icon: Check,
-    color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
+    color: 'status-banner-closed',
   },
 };
 
@@ -176,9 +176,9 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
             <ShieldCheck size={22} className="text-blue-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-100">My Report Status</h2>
-            <p className="text-sm text-gray-400 mt-0.5">
-              Report ID: <code className="text-blue-400 font-bold font-mono text-base">{caseId}</code>
+            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>My Report Status</h2>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Report ID: <code className="text-blue-500 font-bold font-mono text-base">{caseId}</code>
             </p>
           </div>
         </div>
@@ -247,32 +247,32 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
             <div className="flex items-center justify-between border-b border-purple-500/20 pb-2.5">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center">
-                  <BellRing size={15} className="text-purple-300" />
+                  <BellRing size={15} style={{ color: 'var(--accent-purple)' }} />
                 </div>
-                <h4 className="text-sm font-bold text-purple-200">
+                <h4 className="text-sm font-bold" style={{ color: 'var(--accent-purple)' }}>
                   Official Committee Update Notice
                 </h4>
               </div>
-              <span className="text-[11px] text-purple-300/80 font-mono flex items-center gap-1">
-                <Lock size={11} className="text-emerald-400" />
+              <span className="text-[11px] font-mono flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                <Lock size={11} className="text-emerald-500" />
                 Confidential AES-256 Directive
               </span>
             </div>
 
-            <div className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap bg-black/20 p-3.5 rounded-xl border border-white/5">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap rounded-xl p-3.5 border" style={{ color: 'var(--text-primary)', background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
               {officialStatusNote}
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
+            <div className="flex items-center justify-between text-[11px] pt-1" style={{ color: 'var(--text-secondary)' }}>
               <span>Attached directly by the Internal Complaints Committee (ICC).</span>
-              {statusNoteDate && <span className="font-mono text-purple-300/70">Issued: {statusNoteDate}</span>}
+              {statusNoteDate && <span className="font-mono" style={{ color: 'var(--accent-purple)' }}>Issued: {statusNoteDate}</span>}
             </div>
           </div>
         )}
 
         {/* Progress Steps */}
         <div className="flex flex-col gap-3 pt-2">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
             Progress
           </div>
 
@@ -285,12 +285,12 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
               return (
                 <div
                   key={state}
-                  className={`p-4 rounded-xl border flex flex-col gap-2 transition-all ${
+                  className={`p-4 rounded-xl flex flex-col gap-2 transition-all ${
                     isCurrent
-                      ? 'bg-slate-900/90 border-blue-500/60 shadow-lg shadow-blue-950/40 ring-1 ring-blue-500/30'
+                      ? 'progress-step-current'
                       : isPast
-                      ? 'bg-slate-950/40 border-emerald-500/20 opacity-85'
-                      : 'bg-slate-950/20 border-white/5 opacity-40'
+                      ? 'progress-step-past'
+                      : 'progress-step-future'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -301,17 +301,17 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
                             ? 'bg-blue-600 text-white'
                             : isPast
                             ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-800 text-gray-400'
+                            : 'step-number-future'
                         }`}
                       >
                         {isPast ? <Check size={12} /> : idx + 1}
                       </div>
-                      <span className="text-sm font-bold text-gray-200">{STATE_DESCRIPTIONS[state].title}</span>
+                      <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{STATE_DESCRIPTIONS[state].title}</span>
                     </div>
-                    <StateIcon size={16} className={isCurrent ? 'text-blue-400' : isPast ? 'text-emerald-400' : 'text-gray-600'} />
+                    <StateIcon size={16} className={isCurrent ? 'text-blue-500' : isPast ? 'text-emerald-500' : ''} style={!isCurrent && !isPast ? { color: 'var(--text-muted)' } : undefined} />
                   </div>
 
-                  <p className="text-[11px] text-gray-400 leading-normal">
+                  <p className="text-[11px] leading-normal" style={{ color: 'var(--text-secondary)' }}>
                     {STATE_DESCRIPTIONS[state].desc}
                   </p>
                 </div>
@@ -321,10 +321,10 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         </div>
 
         {/* Privacy note */}
-        <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 flex items-start gap-3 text-xs text-gray-400 leading-relaxed">
-          <ShieldCheck size={16} className="text-blue-400 shrink-0 mt-0.5" />
+        <div className="privacy-box rounded-xl p-4 flex items-start gap-3 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          <ShieldCheck size={16} className="text-blue-500 shrink-0 mt-0.5" />
           <div>
-            <strong className="text-gray-200">Your privacy is protected throughout this process.</strong>
+            <strong style={{ color: 'var(--text-primary)' }}>Your privacy is protected throughout this process.</strong>
             <br />
             To keep you safe, detailed internal investigation steps and member names are shielded. Status updates and secure follow-ups stay encrypted end-to-end.
           </div>
@@ -339,10 +339,10 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
               <MessageSquare size={17} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-200">
+              <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Confidential Case Communications & Evidence
               </h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Direct, encrypted two-way channel with the Internal Complaints Committee (ICC)
               </p>
             </div>
@@ -356,15 +356,15 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
         {/* Messages List */}
         <div className="flex flex-col gap-3 min-h-[140px] max-h-[360px] overflow-y-auto pr-1">
           {isLoadingMessages ? (
-            <div className="py-8 text-center text-gray-500 text-xs flex items-center justify-center gap-2">
-              <RefreshCw size={14} className="animate-spin text-blue-400" />
+            <div className="py-8 text-center text-xs flex items-center justify-center gap-2" style={{ color: 'var(--text-muted)' }}>
+              <RefreshCw size={14} className="animate-spin text-blue-500" />
               Loading encrypted messages...
             </div>
           ) : messages.length === 0 ? (
-            <div className="py-8 text-center text-gray-500 text-xs flex flex-col items-center gap-2 bg-slate-950/40 rounded-xl border border-white/5 p-6">
-              <MessageSquare size={24} className="text-gray-600" />
-              <p className="text-gray-300 font-medium">No follow-up messages yet.</p>
-              <p className="text-gray-500 max-w-md">
+            <div className="privacy-box py-8 text-center text-xs flex flex-col items-center gap-2 rounded-xl p-6" style={{ color: 'var(--text-muted)' }}>
+              <MessageSquare size={24} style={{ color: 'var(--text-muted)' }} />
+              <p className="font-medium" style={{ color: 'var(--text-primary)' }}>No follow-up messages yet.</p>
+              <p className="max-w-md" style={{ color: 'var(--text-secondary)' }}>
                 If you have additional dates, witness names, or clarifications, or if the ICC committee requests information, you can securely communicate below.
               </p>
             </div>
@@ -374,17 +374,17 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
               return (
                 <div
                   key={msg.id}
-                  className={`p-3.5 rounded-xl border flex flex-col gap-1.5 transition-all ${
+                  className={`p-3.5 rounded-xl flex flex-col gap-1.5 transition-all ${
                     isComplainant
-                      ? 'bg-blue-950/20 border-blue-500/30 ml-4'
-                      : 'bg-purple-950/25 border-purple-500/35 mr-4'
+                      ? 'msg-complainant ml-4'
+                      : 'msg-icc mr-4'
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs">
-                    <span className={`font-semibold flex items-center gap-1.5 ${isComplainant ? 'text-blue-400' : 'text-purple-300'}`}>
+                    <span className={`font-semibold flex items-center gap-1.5 ${isComplainant ? 'text-blue-500' : 'text-purple-500'}`}>
                       {isComplainant ? 'You (Complainant)' : 'Internal Complaints Committee (ICC)'}
                     </span>
-                    <span className="text-[11px] text-gray-500 font-mono">
+                    <span className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>
                       {new Date(msg.createdAt).toLocaleString([], {
                         month: 'short',
                         day: 'numeric',
@@ -393,7 +393,7 @@ export const StatusPortal = ({ caseId }: StatusPortalProps) => {
                       })}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-200 leading-relaxed whitespace-pre-wrap">
+                  <div className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>
                     {msg.text}
                   </div>
                 </div>
